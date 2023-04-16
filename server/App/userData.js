@@ -8,6 +8,16 @@ const createUserId = async () => {
     }
     return userId;
 };
+function GenKey(length) 
+{
+    let result = '';
+    const characters = '0123456789';
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(
+          Math.floor(Math.random() * characters.length));
+    }
+    return result;
+}
 
 const createUsername = async () => {
     let username = '';
@@ -22,9 +32,37 @@ let user = {
     userId: '',
     username: '',
 };
+const getUserData = async (socket, Content) => {
+  let user = userData.user;
+  user = JSON.parse(Content);
 
+  if(user.userId == '') user.userId = await userData.createUserId();
+  if(user.username == '') user.username = await userData.createUsername();
+
+  console.log('Adding new client to dictionary');
+  clients[user.userId] = {
+    socket: socket,
+    userId: user.userId
+  };
+
+  let content = JSON.stringify(user);
+
+  message = {
+      Type: 'userData',
+      Content: content
+  }
+
+  for (let userId in clients) {
+    if (clients[userId].socket === socket) {
+        socket.send(JSON.stringify(message));
+        break;
+    }
+  }
+
+};
 module.exports = {
     user,
     createUserId,
-    createUsername
+    createUsername,
+    getUserData
   };

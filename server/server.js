@@ -1,14 +1,17 @@
 const WebSocket = require('ws');
-const userData = require('./App/userData');
+const msghand = require('./App/messageHandler')
 const messageTypes = require('./App/messageTypes');
+const DB = require('./App/database');
 
-let clients = {
+const { room } = require('./App/room');
+
+let Users = {
 
 };
 
-let message = {
-  Type: '',
-  Content: ''
+let Rooms =
+{
+
 };
 
 const server = new WebSocket.Server({
@@ -16,25 +19,45 @@ const server = new WebSocket.Server({
   port: 8080
 });
 
+
+const db = new DB.database(
+  "localhost",
+  "root",
+  "betolo9528UM",
+  "mysql")
+
 const clientsLoop = async () => {
   while(true){
-    for (const userId in clients) {
-      console.log(""+clients[userId].userId);
+    for (const userId in Users) {
+      console.log(""+Users[userId].id);
+      
     }
+    //console.log(db.DBSTATE);
     await new Promise(resolve => setTimeout(resolve, 5000));
   }
 };
 
-process.argv.forEach(function (val, index, array) {
-  if(index==2&&val=="remote")  server.host='192.168.1.12';
-  else server.host='localhost';
+process.argv.forEach(function (val, index) {
+  if(index==2&&val=="remote");
 });
 
-
+/*let message = 
+    {
+      Type: 'Join/create/leave',
+      Content:{
+        RoomID : 111111,
+        Password : 'null'
+      },
+      Timestamp: Date.now() // CHANGE LATER
+    };
+*///console.log(message);
 clientsLoop();
+//db.Connect();
 
-console.log('Starting WebSocket server: '+server.host);
+//console.log(db.Query("select * from user"));
 
+
+console.log('Starting WebSocket server: ');
 
 server.on('connection', (socket) => {
     console.log('Client connected');
@@ -45,9 +68,9 @@ server.on('connection', (socket) => {
   
     socket.on('close', () => {
       console.log('Client disconnected');
-      for (let userId in clients) {
-        if (clients[userId].socket === socket) {
-            delete clients[userId];
+      for (let userId in Users) {
+        if (Users[userId].socket === socket) {
+            delete Users[userId];
             break;
         }
       }
@@ -55,15 +78,20 @@ server.on('connection', (socket) => {
 });
 
 const HandleMessage = async (socket, message) => { 
-  try {
+  try 
+  {
     const serverMessage = JSON.parse(message);
     console.log(serverMessage);
     switch (serverMessage.Type) {
-      case messageTypes.PING:
-        HandlePing(socket);
+      case messageTypes.REQVALIDATION:
+        let user = await msghand.HandleValidation(socket,message);
+        Users[user.id]=user;
         break;
-      case messageTypes.CONNECT:
-        // handle connect message
+      case messageTypes.PING:
+        msghand.HandlePing(socket,message);
+        break;
+      case messageTypes.CREATEROOM:
+        msghand.HandleCreateRoom();
         break;
       case messageTypes.DISCONNECT:
         // handle disconnect message
@@ -103,45 +131,12 @@ const HandleMessage = async (socket, message) => {
         }
         break;
     }
-  } catch (e) {
+  } 
+  catch (e) 
+  {
     console.error('Received message error:', e.message, '\nMessage from server:', message);
   }
 };
 
-const HandlePing = async (socket) => {
-  message = {
-    type: messageTypes.PONG,
-    timestamp: Date.now(),
-  };
 
-  socket.send(JSON.stringify(message));
-};
 
-const getUserData = async (socket, Content) => {
-    let user = userData.user;
-    user = JSON.parse(Content);
-
-    if(user.userId == '') user.userId = await userData.createUserId();
-    if(user.username == '') user.username = await userData.createUsername();
-
-    console.log('Adding new client to dictionary');
-    clients[user.userId] = {
-      socket: socket,
-      userId: user.userId
-    };
-
-    let content = JSON.stringify(user);
-
-    message = {
-        Type: 'userData',
-        Content: content
-    }
-
-    for (let userId in clients) {
-      if (clients[userId].socket === socket) {
-          socket.send(JSON.stringify(message));
-          break;
-      }
-    }
-
-};
