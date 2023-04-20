@@ -36,43 +36,56 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     public bool isDisconnecting { get; private set; } = false;
     public bool isValidated { get; private set; } = false;
 
-    public delegate void ServerMessageEvent(Message serverMessage);
-    public event ServerMessageEvent CustomMessage;
+    private bool isAppPlaying = false;
 
-    public delegate void ErrorEvent(ErrorEventArgs error);
-    public event ErrorEvent ClientError;
+    public delegate void ServerMessageE(Message serverMessage);
+    public event ServerMessageE CustomMessage;
 
-    public delegate void ConnectedEvent();
-    public event ConnectedEvent ClientConnected;
+    public delegate void ErrorE(ErrorEventArgs error);
+    public event ErrorE ClientError;
 
-    public delegate void DisconnectedEvent();
-    public event DisconnectedEvent ClientDisconnected;
+    public delegate void ConnectedE();
+    public event ConnectedE ClientConnectedAndReady;
 
-    public delegate void ConnectionStateEvent();
-    public event ConnectionStateEvent ConnectionStateChange;
+    public delegate void DisconnectedE(CloseEventArgs close);
+    public event DisconnectedE ClientDisconnected;
 
-    public delegate void InitialConnectionEvent();
-    public event InitialConnectionEvent InitialConnection;
+    public delegate void ConnectionStateE();
+    public event ConnectionStateE ConnectionStateChange;
 
-    public delegate void ValidationSuccessEvent();
-    public event ValidationSuccessEvent ValidationSuccess;
+    public delegate void InitialConnectionE();
+    public event InitialConnectionE InitialConnection;
 
-    public delegate void ValidationErrorEvent(UnityMultiValidationHelper.ErrorCode errorCode, string ErrorMessage);
-    public event ValidationErrorEvent ValidationError;
+    public delegate void ValidationErrorE(UnityMultiValidationHelper.ErrorCode errorCode, string ErrorMessage);
+    public event ValidationErrorE ValidationError;
 
-    private delegate void ReconnectHandler(CloseEventArgs close);
-    private event ReconnectHandler ReconnectEvent;
+    private delegate void ReconnectE(CloseEventArgs close);
+    private event ReconnectE ReconnectEvent;
+
+    public delegate void JoinRoomE();
+    public event JoinRoomE JoinRoomEvent;
+
+    public delegate void CreateRoomE();
+    public event CreateRoomE CreateRoomEvent;
+
+    public delegate void CreateRoomFailedE(string error);
+    public event CreateRoomFailedE CreateRoomFailed;
 
     protected override void Awake()
     {
         base.Awake();
         ReconnectEvent += Reconnect;
     }
+    private void Update()
+    {
+        IsApplicationPlaying();
+    }
     /// <summary>
     /// 
     /// </summary>
     private void OnDisable()
     {
+        isAppPlaying = false;
         if (!isDisconnecting)
         {
             isDisconnecting = true;
@@ -112,9 +125,11 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
         ws.OnOpen += (sender, args) =>
         {
-            UnityMainThreadDispatcher.Instance().Enqueue(() => InitialConnection?.Invoke());
-            UnityMainThreadDispatcher.Instance().Enqueue(() => ConnectionStateChange?.Invoke());
-            UnityMainThreadDispatcher.Instance().Enqueue(() => RequestValidation());
+            UnityMainThreadDispatcher.Instance().Enqueue(() => {
+                InitialConnection?.Invoke();
+                ConnectionStateChange?.Invoke();
+                RequestValidation();
+            });
         };
 
         ws.OnMessage += (sender, message) =>
@@ -124,14 +139,18 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
         ws.OnError += (sender, error) =>
         {
-            UnityMainThreadDispatcher.Instance().Enqueue(() => ClientError?.Invoke(error));
-            UnityMainThreadDispatcher.Instance().Enqueue(() => ConnectionStateChange?.Invoke());
+            UnityMainThreadDispatcher.Instance().Enqueue(() => {
+                ClientError?.Invoke(error);
+                ConnectionStateChange?.Invoke();
+            });
         };
 
         ws.OnClose += (sender, close) =>
         {
-            UnityMainThreadDispatcher.Instance().Enqueue(() => ClientDisconnected?.Invoke());
-            UnityMainThreadDispatcher.Instance().Enqueue(() => ConnectionStateChange?.Invoke());
+            UnityMainThreadDispatcher.Instance().Enqueue(() => {
+                ClientDisconnected?.Invoke(close);
+                ConnectionStateChange?.Invoke();
+            });
             isConnectionReady = false;
             isValidated = false;
             ReconnectEvent?.Invoke(close);
@@ -149,30 +168,29 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         {
             if (_autoReconnect)
             {
-                UnityMainThreadDispatcher.Instance().Enqueue(() => {
-                    if (IsApplicationPlaying())
+
+                if (isAppPlaying)
+                {
+                    _isReconnecting = true;
+
+                    while (_isReconnecting && reconnectAttempt < maxReconnectAttempt && !IsConnected && isAppPlaying)
                     {
+                        Debug.Log("Attempting to reconnect... " + (reconnectAttempt + 1) + "/" + maxReconnectAttempt);
+                        Connect(ws.Url.ToString(), clientData.Username);
 
-                        _isReconnecting = true;
-
-                        while (_isReconnecting && reconnectAttempt < maxReconnectAttempt && !IsConnected)
-                        {
-                            Debug.Log("Attempting to reconnect... " + (reconnectAttempt + 1) + "/" + maxReconnectAttempt);
-                            Connect(ws.Url.ToString(), clientData.Username);
-
-                            new WaitForSeconds(ReconnectDelaySeconds);
-                            reconnectAttempt++;
-                        }
-
-                        if (reconnectAttempt >= maxReconnectAttempt)
-                        {
-                            Debug.LogWarning("Reached max reconnect attempts: " + maxReconnectAttempt);
-                        }
-
-                        _isReconnecting = false;
-                        reconnectAttempt = 0;
+                        new WaitForSeconds(ReconnectDelaySeconds);
+                        reconnectAttempt++;
                     }
-                });
+
+                    if (reconnectAttempt >= maxReconnectAttempt)
+                    {
+                        Debug.LogWarning("Reached max reconnect attempts: " + maxReconnectAttempt);
+                    }
+
+                    _isReconnecting = false;
+                    reconnectAttempt = 0;
+                }
+                
             }
         }
         
@@ -265,6 +283,22 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         SendMessage(validationRequest);
     }
 
+    public void CreateRoom(UnityMultiRoomSettings settings)
+    {
+        Debug.Log("IsVakudated: " + isValidated);
+        if (isValidated)
+        {
+            Message roomSettings = new Message(MessageType.CREATE_ROOM, JsonConvert.SerializeObject(settings), GetTimeNow());
+            Debug.Log("Settings: " + JsonConvert.SerializeObject(settings));
+            SendMessage(roomSettings);
+        }
+        else
+        {
+            CreateRoomFailed?.Invoke("Client isn't ready to join the room yet.");
+        }
+    }
+
+
     /// <summary>
     /// Base server message handler
     /// </summary>
@@ -343,13 +377,15 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     private void HandleValidation(string serverMessage)
     {
         UnityMultiValidationHelper.ValidationResult validationMessage = JsonConvert.DeserializeObject<UnityMultiValidationHelper.ValidationResult>(serverMessage);
+        clientData.SetUserId(validationMessage.UserID);
 
         if (validationMessage.Validated)
         {
-            isValidated = validationMessage.Validated;
-            ValidationSuccess?.Invoke();
+            isValidated = true;
+            ClientConnectedAndReady?.Invoke();
             StartCoroutine(SendPing());
-        } else
+        }
+        else
         {
             ValidationError?.Invoke(validationMessage.ErrorCode, UnityMultiValidationHelper.ValidationError(validationMessage));
             Disconnect();
@@ -374,14 +410,6 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     }
 
     /// <summary>
-    /// add event handler script to the object if it doesn't exist yet
-    /// </summary>
-    public void AddEventHandler()
-    {
-        if (this.gameObject.GetComponent<UnityMultiEventHandler>() == null)
-            this.gameObject.AddComponent<UnityMultiEventHandler>();
-    }
-    /// <summary>
     /// Method used to get current time
     /// </summary>
     /// <returns>returns time now as long</returns>
@@ -390,10 +418,11 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     }
 
-    private bool IsApplicationPlaying()
+    private void IsApplicationPlaying()
     {
-        return Application.isPlaying;
+        isAppPlaying = Application.isPlaying;
     }
+
 
 }
 

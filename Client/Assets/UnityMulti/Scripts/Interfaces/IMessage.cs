@@ -9,6 +9,10 @@ public class MessageType
     /// </summary>
     public const string PING = "ping";
     public const string PONG = "pong";
+    ///
+    /// 
+    /// 
+    public const string CREATE_ROOM = "createRoom";
     /// <summary>
     /// these message types could be used to establisz connection between client and server.
     /// </summary>
@@ -51,14 +55,14 @@ public interface IMessage
 {
     public string Type { get; set; }
     public string Content { get; set; }
-    public long Timestamp { get; set; }
+    public long? Timestamp { get; set; }
 }
 
 public class Message : IMessage
 {
     public string Type { get; set; }
     public string Content { get; set; }
-    public long Timestamp { get; set; }
+    public long? Timestamp { get; set; } = null;
 
     public Message(string type, string content, long timestamp)
     {

@@ -17,7 +17,7 @@ public static class UnityMultiValidationHelper
         public string Username { get; private set; }
         public string UserID { get; private set; }
 
-        public ValidationResult(bool validated, ErrorCode errorCode, string username, string userID)
+        public ValidationResult(string userID, string username, bool validated, ErrorCode errorCode)
         {
             Validated = validated;
             ErrorCode = errorCode;

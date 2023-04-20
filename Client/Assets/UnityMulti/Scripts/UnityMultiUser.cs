@@ -19,12 +19,12 @@ public class UnityMultiUser
     public UnityMultiUser() { }
     public UnityMultiUser(string username)
     {
-        Username = username;
+        this.Username = username;
     }
 
     public UnityMultiUser(string username, string userID)
     {
-        Username = username;
-        UserID = userID;
+        this.Username = username;
+        this.UserID = userID;
     }
 }

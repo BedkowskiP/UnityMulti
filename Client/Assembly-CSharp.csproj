@@ -58,8 +58,8 @@
   <ItemGroup>
     <Compile Include="Assets\UnityMulti\Scripts\BaseSingleton.cs" />
     <Compile Include="Assets\UnityMulti\Scripts\Interfaces\IDisposable.cs" />
-    <Compile Include="Assets\UnityMulti\Scripts\UnityMultiEventHandler.cs" />
     <Compile Include="Assets\UnityMulti\Libraries\UnityMainThreadDispatcher\UnityMainThreadDispatcher.cs" />
+    <Compile Include="Assets\UnityMulti\Scripts\UnityMultiRoomSettings.cs" />
     <Compile Include="Assets\Test2.cs" />
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiNetworking.cs" />
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiUser.cs" />

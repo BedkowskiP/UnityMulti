@@ -16,15 +16,14 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
     private void Awake()
     {
         multiNetworking = UnityMultiNetworking.Instance;
-        multiNetworking.AddEventHandler();
         multiNetworking.CustomMessage += OnCustomMessage;
         multiNetworking.ClientError += OnClientError;
-        multiNetworking.ClientConnected += OnClientConnected;
+        multiNetworking.ClientConnectedAndReady += OnClientConnected;
         multiNetworking.ClientDisconnected += OnClientDisconnected;
         multiNetworking.ConnectionStateChange += OnConnectionStateChange;
         multiNetworking.InitialConnection += OnInitialConnection;
-        multiNetworking.ValidationSuccess += OnValidationSuccess;
         multiNetworking.ValidationError += OnValidationError;
+        multiNetworking.CreateRoomFailed += OnCreateRoomFailed;
     }
 
     public virtual void OnClientError(ErrorEventArgs error)
@@ -37,10 +36,10 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
 
     public virtual void OnClientConnected()
     {
-        Debug.Log("Connected to server.");
+        Debug.Log("Connected to server and ready to join room.");
     }
 
-    public virtual void OnClientDisconnected()
+    public virtual void OnClientDisconnected(CloseEventArgs close)
     {
         Debug.Log("Disconnected from server.");
     }
@@ -60,13 +59,13 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
         Debug.Log("Validating user data");
     }
 
-    public virtual void OnValidationSuccess()
-    {
-        Debug.Log("Successful validation");
-    }
-
     public virtual void OnValidationError(UnityMultiValidationHelper.ErrorCode errorCode, string ErrorMessage)
     {
         Debug.Log("Validation error: \nErrorCode: " + errorCode + "\nErrorMessage: " + ErrorMessage);
+    }
+
+    public virtual void OnCreateRoomFailed(string error)
+    {
+        Debug.Log(error);
     }
 }

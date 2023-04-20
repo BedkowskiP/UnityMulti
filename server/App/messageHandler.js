@@ -10,6 +10,12 @@ let message = {
     Content: ''
 };
 
+let validateContent = {
+    UserID :'',
+    Username : '',
+    Validated : '',
+    ErrorCode : ''
+};
 
 const getUserData = async (Content) => {
     let user = userData.user;
@@ -42,28 +48,30 @@ const HandleValidation =  async (socket,msg) =>
   let isErrorCode = 1;
   let isValid = false;
   
-  if(content.username==""||content.username==null)usrn=id;
-  else usrn=content.username;
+  if(content.Username==""||content.Username==null)usrn=id;
+  else usrn=content.Username;
 
-  if(content.username=="betek") //case sensetive only
+  if(content.Username=="betek") //case sensetive only
   //if(jsonmsg.Content.username.localeCompare("Betek")==0)// case sensitive with no accents
   {
     isValid = true
     isErrorCode = 0;
   } 
   //-1 - username has wrong casing 0 - correct nad 1 - wrong // pewnie potem haslo i zapytanie do abzy danych
+
+  validateContent = {
+    UserID : id,
+    Username : usrn,
+    Validated : isValid,
+    ErrorCode : isErrorCode
+  }
+  
   message = 
   {
     Type : messageTypes.RESVALIDATION,
-    Content : 
-    {
-      UserID : id,
-      Username : usrn,
-      Validated : isValid,
-      ErrorCode : isErrorCode
-    }
-
+    Content : JSON.stringify(validateContent)
   }
+
   user.id=id;
   user.name=usrn;
   user.socket=socket;
