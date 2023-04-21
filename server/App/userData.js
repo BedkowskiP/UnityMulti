@@ -8,7 +8,7 @@ const createUserId = async () => {
     }
     return userId;
 };
-function GenKey(length) 
+const GenKey = async(length) =>
 {
     let result = '';
     const characters = '0123456789';
@@ -64,5 +64,6 @@ module.exports = {
     user,
     createUserId,
     createUsername,
-    getUserData
+    getUserData,
+    GenKey
   };

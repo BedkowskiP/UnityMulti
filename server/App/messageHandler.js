@@ -1,5 +1,8 @@
 const userData = require('./userData');
 const messageTypes = require('./messageTypes');
+const { Room } = require('./room');
+const roomsMan = require('./roomsManager')
+
 let user =
 {
 
@@ -10,12 +13,6 @@ let message = {
     Content: ''
 };
 
-let validateContent = {
-    UserID :'',
-    Username : '',
-    Validated : '',
-    ErrorCode : ''
-};
 
 const getUserData = async (Content) => {
     let user = userData.user;
@@ -35,16 +32,15 @@ const getUserData = async (Content) => {
     return 0;
 };
 
-const HandleValidation =  async (socket,msg) => 
+const HandleValidation =  async (socket,jsonmsg) => 
 {
-  let jsonmsg = JSON.parse(msg)
   let content = JSON.parse(jsonmsg.Content)
   let id = await userData.createUserId();
   let usrn= "";
-  /// ErrorCode 
-  /// 0 - succes
-  /// 1 - wrong username
-  /// 2 - later
+  /// ErrorCode 100-200 validation
+  /// 100 - succes
+  /// 101 - wrong username
+  /// 102 - later
   let isErrorCode = 1;
   let isValid = false;
   
@@ -55,23 +51,22 @@ const HandleValidation =  async (socket,msg) =>
   //if(jsonmsg.Content.username.localeCompare("Betek")==0)// case sensitive with no accents
   {
     isValid = true
-    isErrorCode = 0;
+    isErrorCode = 100;
   } 
   //-1 - username has wrong casing 0 - correct nad 1 - wrong // pewnie potem haslo i zapytanie do abzy danych
-
-  validateContent = {
-    UserID : id,
-    Username : usrn,
-    Validated : isValid,
-    ErrorCode : isErrorCode
-  }
-  
+  let jsonContent =
+  {
+      UserID : id,
+      Username : usrn,
+      Validated : isValid
+  };
   message = 
   {
     Type : messageTypes.RESVALIDATION,
-    Content : JSON.stringify(validateContent)
+    Content : JSON.stringify(jsonContent),
+    ErrorCode : isErrorCode,
+    Timestamp: Date.now() // CHANGE LATER
   }
-
   user.id=id;
   user.name=usrn;
   user.socket=socket;
@@ -84,27 +79,86 @@ const HandlePing = async (socket,msg) => {
     message = 
     {
       Type: messageTypes.PONG,
-      Timestamp: Date.now() // CHANGE LATER
+      Content : msg.Timestamp,
+      Timestamp: Date.now()
     };
-    socket.send(JSON.stringify(message));
+    //console.log(message);
+    if(socket!=null)socket.send(JSON.stringify(message));
   };
-///
-///ROOMS
-///
-const HandleCreateRoom = async (socket,msg) =>
+
+//#region ROOMS
+const HandleCreateRoom = async (socket,jsonmsg) =>
 {
-  let jsonmsg = JSON.parse(msg)
+  ///error 200-300 ROOMS
   let content = JSON.parse(jsonmsg.Content)
+  let isErrorCode = 200;
+  ///
+  ///ADD CHECK for maxplayers/ ROOM NAME/PASSWORD/ISPUBLIC IF BAD ADD ERROR CODE
+  ///
+  let room = new Room(content.RoomName,socket,content.Password,content.IsPublic,content.MaxPlayers)
+  await roomsMan.AddRoom(room);
+  let jsonContent =
+  {
+    RoomName:content.RoomName,
+  };
+  message = 
+  {
+    Type : messageTypes.RESCREATEROOM,
+    Content : JSON.stringify(jsonContent),
+    ErrorCode : isErrorCode, //200 succesfully created room //201 to create failed beacuse something
+    Timestamp: Date.now() // CHANGE LATER
+  }
+  //console.log(message);
+  if(socket!=null)socket.send(JSON.stringify(message));
 }
+const HandleJoinRoom = async (socket,jsonmsg,Userid) =>
+{
+  let isErrorCode = 220;
+  let content = JSON.parse(jsonmsg.Content)
+  roomsMan.AddUserToRoom(content.RoomName,Userid);
+  ///check if room id/name exist
+  //console.log(roomsMan.GetUsersInRoom(content.RoomID));
+  
+  let jsonContent =
+  {
+    RoomName: content.RoomName,
+    UserList: await(roomsMan.GetUsersInRoom(content.RoomName))
+  };
+  message = 
+  {
+    Type : messageTypes.RESJOINROOM,
+    Content : JSON.stringify(jsonContent),
+    ErrorCode : isErrorCode, //220 Succesfully joined room // 201 failed to join room
+    Timestamp: Date.now() // CHANGE LATER
+  }
+  console.log(message);
+  if(socket!=null)socket.send(JSON.stringify(message));
 
+}
+const HandleLeaveRoom = async (socket,jsonmsg,Userid) =>
+{
+  let isErrorCode=230;
+  alert("notimplemented");
+  let jsonContent =
+  {
+    RoomName: "NOT DONE"
+  };
+  message = 
+  {
+    Type : messageTypes.RESLEAVEROOM,
+    Content : JSON.stringify(jsonContent),
+    ErrorCode : isErrorCode, 
+    Timestamp: Date.now()
+  }
+  if(socket!=null)socket.send(JSON.stringify(message));
+}
+HandleLeaveRoom
+//#endregion
 
-
-
-///
-///ROOMS END
-///
 module.exports = {
     HandleValidation,
     HandleCreateRoom,
+    HandleJoinRoom,
+    HandleLeaveRoom,
     HandlePing
   };

@@ -2,17 +2,14 @@ const WebSocket = require('ws');
 const msghand = require('./App/messageHandler')
 const messageTypes = require('./App/messageTypes');
 const DB = require('./App/database');
+const roomsMan = require('./App/roomsManager')
 
-const { room } = require('./App/room');
 
 let Users = {
 
 };
 
-let Rooms =
-{
 
-};
 
 const server = new WebSocket.Server({
   host: 'localhost',
@@ -26,34 +23,54 @@ const db = new DB.database(
   "betolo9528UM",
   "mysql")
 
-const clientsLoop = async () => {
+const UsersLoop = async () => {
   while(true){
-    for (const userId in Users) {
-      console.log(""+Users[userId].id);
-      
-    }
-    //console.log(db.DBSTATE);
+    for (const socket in Users) 
+      console.log(Users[socket].id);
     await new Promise(resolve => setTimeout(resolve, 5000));
   }
 };
 
+const RoomLoop = async () => {
+  while(true){  
+    for (const name in roomsMan.Rooms) {
+      console.log(roomsMan.Rooms[name].name);
+    }
+    //console.log(roomsMan.Rooms)
+    await new Promise(resolve => setTimeout(resolve, 5000));
+  }
+};
+const UserInRoomLoop = async () => {
+  while(true){  
+      console.log(roomsMan.UserInRoom);
+    //console.log(roomsMan.Rooms)
+    await new Promise(resolve => setTimeout(resolve, 5000));
+  }
+};
 process.argv.forEach(function (val, index) {
   if(index==2&&val=="remote");
 });
 
-/*let message = 
-    {
-      Type: 'Join/create/leave',
-      Content:{
-        RoomID : 111111,
-        Password : 'null'
-      },
-      Timestamp: Date.now() // CHANGE LATER
-    };
-*///console.log(message);
-clientsLoop();
-//db.Connect();
 
+let Content = {
+  RoomName:'RoomA',
+  Password:null,
+  IsPublic:true,
+  MaxPlayers:10
+}
+
+let message = 
+    {
+      Type: messageTypes.CREATEROOM,
+      Content : JSON.stringify(Content),
+      Timestamp: Date.now()
+    };
+///console.log(message);
+UsersLoop();
+//UsersLoopByID();
+//RoomLoop();
+//db.Connect();
+//UserInRoomLoop();
 //console.log(db.Query("select * from user"));
 
 
@@ -66,8 +83,8 @@ server.on('connection', (socket) => {
       HandleMessage(socket, data);
     });
   
-    socket.on('close', () => {
-      console.log('Client disconnected');
+    socket.on('close', (code) => {
+      console.log('Client disconnected with code: '+code);
       for (let userId in Users) {
         if (Users[userId].socket === socket) {
             delete Users[userId];
@@ -81,17 +98,24 @@ const HandleMessage = async (socket, message) => {
   try 
   {
     const serverMessage = JSON.parse(message);
-    console.log(serverMessage);
+    //console.log(serverMessage);
     switch (serverMessage.Type) {
       case messageTypes.REQVALIDATION:
-        let user = await msghand.HandleValidation(socket,message);
+        let user = await msghand.HandleValidation(socket,serverMessage);
+        //Users[user.socket]=user;
         Users[user.id]=user;
         break;
       case messageTypes.PING:
-        msghand.HandlePing(socket,message);
+        msghand.HandlePing(socket,serverMessage);
         break;
       case messageTypes.CREATEROOM:
-        msghand.HandleCreateRoom();
+        await msghand.HandleCreateRoom(socket,serverMessage);
+        break;
+      case messageTypes.JOINROOM:
+        await msghand.HandleJoinRoom(socket,serverMessage,Users[socket].id);
+        break;
+      case messageTypes.LEAVEROOM:
+        await msghand.HandleLeaveRoom(socket,serverMessage);
         break;
       case messageTypes.DISCONNECT:
         // handle disconnect message
@@ -134,9 +158,46 @@ const HandleMessage = async (socket, message) => {
   } 
   catch (e) 
   {
+
     console.error('Received message error:', e.message, '\nMessage from server:', message);
   }
 };
+/*
 
+HandleMessage(null,JSON.stringify(message))
+Content = {
+  RoomName:'RoomA',
+  Password:null
+  
+}
+let testUser = 
+{
+  id:'test',
+  name:'test',
+  socket:null,
+  valid:true
+}
+message = 
+    {
+      Type: messageTypes.JOINROOM,
+      Content : JSON.stringify(Content),
+      Timestamp: Date.now()
+    };
+console.log(message);
+const Tester = async (testUser, message) =>
+{
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  msghand.HandleJoinRoom(testUser,(message));
+  
+}
+Tester(testUser,(message));
 
-
+let testUser2 = 
+{
+  id:'test2',
+  name:'test2',
+  socket:null,
+  valid:true
+}
+Tester(testUser2,(message));
+*/
