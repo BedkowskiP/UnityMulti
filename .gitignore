@@ -1,5 +1,6 @@
 #ignore Unity Library
 /Client/Library
 /Client/obj
+/server
 *.cache
 *.cache
