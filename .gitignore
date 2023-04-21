@@ -1,6 +1,8 @@
 #ignore Unity Library
 /Client/Library
 /Client/obj
-/server
+/Client/Usersettings
+/Client/Logs
 *.cache
 *.cache
+/server/node_modules

@@ -2,12 +2,22 @@
 
 /// these messages are used for room managment
 /// Create,Join,Leave
-/// 
-const CREATEROOM = "createRoom";
-const LEAVEROOM = "leaveRoom";
-const JOINROOM = "joinRoom";
-
-
+const ROOMSMANAGE = "roomsManagement";
+  ///
+  ///Room Actions
+  ///
+  const LEAVEROOM = "leaveRoom";
+  const JOINROOM = "joinRoom";
+  const CREATEROOM = "createRoom"
+  const RESCREATEROOM ="responseCreateRoom"
+  const RESJOINROOM  ="responseJoinRoom"
+  const RESLEAVEROOM = "responseLeaveRoom"
+  ///
+  ///Actions
+  ///
+  ///broadcast to notify users in room
+  const USERJOIN = "userJoin";
+  const USERLEAVE = "userLeave";
 
 /// <summary>
 /// these messages are used check latency.
@@ -54,6 +64,7 @@ const SERVER_MESSAGE = "serverMessage"; ///NOT IMPLEMENTED
 let CUSTOM = [];
 
 module.exports = {
+  ROOMSMANAGE,
   CREATEROOM,
   JOINROOM,
   LEAVEROOM,
@@ -72,5 +83,8 @@ module.exports = {
     SERVER_STATUS,
     CHAT_MESSAGE,
     SERVER_MESSAGE,
-    CUSTOM
+    CUSTOM,
+    RESCREATEROOM,
+    RESJOINROOM,
+    RESLEAVEROOM
   };

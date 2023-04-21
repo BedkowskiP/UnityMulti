@@ -1,12 +1,14 @@
-class room
+class Room
 {
-    constructor(name,host,settings)
+    constructor(name,host,password,isPublic,maxPlayers)
     {
         this.name=name;
         this.host=host
-        this.settings=settings
+        this.password=password
+        this.isPublic=isPublic
+        this.maxPlayers=maxPlayers
     } 
 }
 
 
-module.exports = {room}
+module.exports = {Room}
