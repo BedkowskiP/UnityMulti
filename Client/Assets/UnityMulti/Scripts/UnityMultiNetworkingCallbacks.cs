@@ -24,6 +24,8 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
         multiNetworking.InitialConnection += OnInitialConnection;
         multiNetworking.ValidationError += OnValidationError;
         multiNetworking.CreateRoomFailed += OnCreateRoomFailed;
+        multiNetworking.ClientJoin += OnClientJoin;
+        multiNetworking.ClientLeave += OnClientLeave;
     }
 
     public virtual void OnClientError(ErrorEventArgs error)
@@ -59,7 +61,7 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
         Debug.Log("Validating user data");
     }
 
-    public virtual void OnValidationError(UnityMultiValidationHelper.ErrorCode errorCode, string ErrorMessage)
+    public virtual void OnValidationError(ErrorCode errorCode, string ErrorMessage)
     {
         Debug.Log("Validation error: \nErrorCode: " + errorCode + "\nErrorMessage: " + ErrorMessage);
     }
@@ -67,5 +69,14 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
     public virtual void OnCreateRoomFailed(string error)
     {
         Debug.Log(error);
+    }
+
+    public virtual void OnClientJoin(UnityMultiUser user)
+    {
+        Debug.Log("User: " + user.Username + " joined the room");
+    }
+    public virtual void OnClientLeave(UnityMultiUser user)
+    {
+        Debug.Log("User: "+user.Username+" left the room");
     }
 }

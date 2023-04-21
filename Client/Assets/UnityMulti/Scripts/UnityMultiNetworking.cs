@@ -16,6 +16,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
     private WebSocket ws;
     public UnityMultiUser clientData { get; private set; }
+    public UnityMultiRoom roomData { get; private set; }
 
     public bool IsConnected
     {
@@ -56,26 +57,28 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     public delegate void InitialConnectionE();
     public event InitialConnectionE InitialConnection;
 
-    public delegate void ValidationErrorE(UnityMultiValidationHelper.ErrorCode errorCode, string ErrorMessage);
+    public delegate void ValidationErrorE(ErrorCode errorCode, string ErrorMessage);
     public event ValidationErrorE ValidationError;
 
     private delegate void ReconnectE(CloseEventArgs close);
     private event ReconnectE ReconnectEvent;
 
-    public delegate void JoinRoomE();
-    public event JoinRoomE JoinRoomEvent;
+    public delegate void RoomE();
+    public event RoomE JoinRoomEvent;
 
-    public delegate void CreateRoomE();
-    public event CreateRoomE CreateRoomEvent;
+    public delegate void RoomFailedE(string error);
+    public event RoomFailedE CreateRoomFailed;
 
-    public delegate void CreateRoomFailedE(string error);
-    public event CreateRoomFailedE CreateRoomFailed;
+    public delegate void RoomClientChangeE(UnityMultiUser user);
+    public event RoomClientChangeE ClientJoin;
+    public event RoomClientChangeE ClientLeave;
 
     protected override void Awake()
     {
         base.Awake();
         ReconnectEvent += Reconnect;
     }
+
     private void Update()
     {
         IsApplicationPlaying();
@@ -92,7 +95,6 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             Disconnect();
         }
     }
-
     /// <summary>
     /// 
     /// </summary>
@@ -313,14 +315,11 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
                 case MessageType.PONG:
                     HandlePong(serverMessage.Content);
                     break;
-                case MessageType.CONNECT:
-                    // handle connect message
-                    break;
-                case MessageType.DISCONNECT:
-                    // handle disconnect message
-                    break;
                 case MessageType.VALIDATION_RESPONSE:
                     HandleValidation(serverMessage.Content);
+                    break;
+                case MessageType.CREATE_ROOM_RESPONSE:
+                    HandleCreateRoom(serverMessage.Content);
                     break;
                 case MessageType.GAME_STATE:
                     // handle game state message
@@ -391,7 +390,19 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             Disconnect();
         }
     }
+    private void HandleCreateRoom(string serverMessage)
+    {
 
+    }
+
+    public void ClientJoinM(UnityMultiUser user)
+    {
+        ClientJoin?.Invoke(user);
+    }
+    public void ClientLeaveM(UnityMultiUser user)
+    {
+        ClientLeave?.Invoke(user);
+    }
     /// <summary>
     /// Coroutine that send ping to server every second to check response time
     /// </summary>

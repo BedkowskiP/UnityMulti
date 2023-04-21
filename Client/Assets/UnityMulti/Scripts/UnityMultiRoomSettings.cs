@@ -37,9 +37,26 @@ public class UnityMultiRoomSettings
 public class UnityMultiRoom : MonoBehaviour
 {
     public UnityMultiRoomSettings settings { get; private set; }
-    public string RoomID { get; private set; }
+    private List<UnityMultiUser> clientList = new List<UnityMultiUser>();
+    private List<GameObject> roomObjectList = new List<GameObject>();
+    private Dictionary<string, GameObject> clientObjectDict = new Dictionary<string, GameObject>();
+    private UnityMultiNetworking multiNetworking;
 
-    public List<UnityMultiUser> clientList = new List<UnityMultiUser>();
+    public UnityMultiRoom(UnityMultiRoomSettings settings, UnityMultiNetworking multiNetworking)
+    {
+        this.settings = settings;
+        this.multiNetworking = multiNetworking;
+    }
 
-    //mozliwe ze tutaj jakis player list itd sie jeszcze doda
+    public void AddUser(UnityMultiUser newUser)
+    {
+        clientList.Add(newUser);
+        multiNetworking.ClientJoinM(newUser);
+    }
+
+    public void removeUser(UnityMultiUser user)
+    {
+        clientList.Remove(user);
+        multiNetworking.ClientLeaveM(user);
+    }
 }
