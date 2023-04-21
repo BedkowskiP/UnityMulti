@@ -9,10 +9,16 @@ public class MessageType
     /// </summary>
     public const string PING = "ping";
     public const string PONG = "pong";
-    ///
+    /// <summary>
     /// 
-    /// 
+    /// </summary>
     public const string CREATE_ROOM = "createRoom";
+    public const string JOIN_ROOM = "joinRoom";
+    public const string CREATE_ROOM_RESPONSE = "responseCreateRoom";
+    public const string JOIN_ROOM_RESPONSE = "responseJoinRoom;";
+    public const string USER_JOIN = "userJoin";
+    public const string USER_LEAVE = "userLeave";
+    public const string LEAVE_ROOM = "leaveRoom";
     /// <summary>
     /// these message types could be used to establisz connection between client and server.
     /// </summary>
@@ -51,11 +57,19 @@ public class MessageType
     public static List<string> CUSTOM { get; set; }
 }
 
+public enum ErrorCode
+{
+    None = 0,
+    InvalidCredientials = 1,
+
+}
+
 public interface IMessage
 {
     public string Type { get; set; }
     public string Content { get; set; }
     public long? Timestamp { get; set; }
+    public ErrorCode ErrorCode { get; set; }
 }
 
 public class Message : IMessage
@@ -63,6 +77,15 @@ public class Message : IMessage
     public string Type { get; set; }
     public string Content { get; set; }
     public long? Timestamp { get; set; } = null;
+    public ErrorCode ErrorCode { get; set; } = 0;
+
+    public Message(string type, string content, long timestamp, ErrorCode errorCode)
+    {
+        this.Type = type;
+        this.Content = content;
+        this.Timestamp = timestamp;
+        this.ErrorCode = errorCode;
+    }
 
     public Message(string type, string content, long timestamp)
     {

@@ -4,12 +4,6 @@ using UnityEngine;
 
 public static class UnityMultiValidationHelper
 {
-    public enum ErrorCode
-    {
-        None = 0,
-        InvalidCredientials = 1
-    }
-
     public class ValidationResult
     {
         public bool Validated { get; private set; }
