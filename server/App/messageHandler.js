@@ -2,11 +2,10 @@ const userData = require('./userData');
 const messageTypes = require('./messageTypes');
 const { Room } = require('./room');
 const roomsMan = require('./roomsManager')
+const Util = require("./servUtil")
 
-let user =
-{
 
-}
+const DEBUGMODE= false;
 
 let message = {
     Type: '',
@@ -14,31 +13,13 @@ let message = {
 };
 
 
-const getUserData = async (Content) => {
-    let user = userData.user;
-    user = JSON.parse(Content);
-
-    if(user.userId == '') user.userId = createUserId();
-    if(user.username == '') user.username = createUserId();
-
-    let content = JSON.stringify(user);
-
-    message = 
-    {
-        Type: 'userData',
-        Content: content
-    }
-
-    return 0;
-};
-
 const HandleValidation =  async (socket,jsonmsg) => 
 {
   let content = JSON.parse(jsonmsg.Content)
-  let id = await userData.createUserId();
+  let id = await Util.createUserId();
   let usrn= "";
   /// ErrorCode 100-200 validation
-  /// 100 - succes
+  /// 0 - succes
   /// 101 - wrong username
   /// 102 - later
   let isErrorCode = 1;
@@ -51,7 +32,7 @@ const HandleValidation =  async (socket,jsonmsg) =>
   //if(jsonmsg.Content.username.localeCompare("Betek")==0)// case sensitive with no accents
   {
     isValid = true
-    isErrorCode = 100;
+    isErrorCode = 0;
   } 
   //-1 - username has wrong casing 0 - correct nad 1 - wrong // pewnie potem haslo i zapytanie do abzy danych
   let jsonContent =
@@ -67,11 +48,13 @@ const HandleValidation =  async (socket,jsonmsg) =>
     ErrorCode : isErrorCode,
     Timestamp: Date.now() // CHANGE LATER
   }
+  let user = {id:id,name:usrn,socket:socket,valid:isValid}
+    /*
   user.id=id;
   user.name=usrn;
   user.socket=socket;
-  user.valid=isValid;
-  console.log(message);
+  user.valid=isValid;*/
+  //console.log(message);
   if(socket!=null)socket.send(JSON.stringify(message));
   return user;
 }
@@ -87,15 +70,15 @@ const HandlePing = async (socket,msg) => {
   };
 
 //#region ROOMS
-const HandleCreateRoom = async (socket,jsonmsg) =>
+const HandleCreateRoom = async (socket,jsonmsg,Userid) =>
 {
   ///error 200-300 ROOMS
   let content = JSON.parse(jsonmsg.Content)
-  let isErrorCode = 200;
+  let isErrorCode = 0;
   ///
   ///ADD CHECK for maxplayers/ ROOM NAME/PASSWORD/ISPUBLIC IF BAD ADD ERROR CODE
   ///
-  let room = new Room(content.RoomName,socket,content.Password,content.IsPublic,content.MaxPlayers)
+  let room = new Room(content.RoomName,Userid,content.Password,content.IsPublic,content.MaxPlayers)
   await roomsMan.AddRoom(room);
   let jsonContent =
   {
@@ -105,16 +88,19 @@ const HandleCreateRoom = async (socket,jsonmsg) =>
   {
     Type : messageTypes.RESCREATEROOM,
     Content : JSON.stringify(jsonContent),
-    ErrorCode : isErrorCode, //200 succesfully created room //201 to create failed beacuse something
+    ErrorCode : isErrorCode, //0 succesfully created room //201 to create failed beacuse something
     Timestamp: Date.now() // CHANGE LATER
   }
   //console.log(message);
   if(socket!=null)socket.send(JSON.stringify(message));
+  
+  await HandleJoinRoom(socket,jsonmsg,Userid)
 }
 const HandleJoinRoom = async (socket,jsonmsg,Userid) =>
 {
-  let isErrorCode = 220;
+  let isErrorCode = 0;
   let content = JSON.parse(jsonmsg.Content)
+  
   roomsMan.AddUserToRoom(content.RoomName,Userid);
   ///check if room id/name exist
   //console.log(roomsMan.GetUsersInRoom(content.RoomID));
@@ -128,20 +114,22 @@ const HandleJoinRoom = async (socket,jsonmsg,Userid) =>
   {
     Type : messageTypes.RESJOINROOM,
     Content : JSON.stringify(jsonContent),
-    ErrorCode : isErrorCode, //220 Succesfully joined room // 201 failed to join room
+    ErrorCode : isErrorCode, //0 Succesfully joined room // 201 failed to join room
     Timestamp: Date.now() // CHANGE LATER
   }
-  console.log(message);
+  //console.log(message);
   if(socket!=null)socket.send(JSON.stringify(message));
 
 }
 const HandleLeaveRoom = async (socket,jsonmsg,Userid) =>
 {
-  let isErrorCode=230;
-  alert("notimplemented");
+
+  //make checks for if user in room if room still exist so on
+  let isErrorCode=0;
+  let content = JSON.parse(jsonmsg.Content)
   let jsonContent =
   {
-    RoomName: "NOT DONE"
+    RoomName: content.RoomName
   };
   message = 
   {
@@ -150,6 +138,7 @@ const HandleLeaveRoom = async (socket,jsonmsg,Userid) =>
     ErrorCode : isErrorCode, 
     Timestamp: Date.now()
   }
+  await roomsMan.RemoveUserFromRoom(content.RoomName,Userid)
   if(socket!=null)socket.send(JSON.stringify(message));
 }
 HandleLeaveRoom

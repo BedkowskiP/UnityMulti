@@ -36,14 +36,13 @@ const RoomLoop = async () => {
     for (const name in roomsMan.Rooms) {
       console.log(roomsMan.Rooms[name].name);
     }
-    //console.log(roomsMan.Rooms)
     await new Promise(resolve => setTimeout(resolve, 5000));
   }
 };
 const UserInRoomLoop = async () => {
   while(true){  
-      console.log(roomsMan.UserInRoom);
-    //console.log(roomsMan.Rooms)
+      console.log("List of Users in rooms: ",roomsMan.UserInRoom);
+
     await new Promise(resolve => setTimeout(resolve, 5000));
   }
 };
@@ -52,25 +51,12 @@ process.argv.forEach(function (val, index) {
 });
 
 
-let Content = {
-  RoomName:'RoomA',
-  Password:null,
-  IsPublic:true,
-  MaxPlayers:10
-}
 
-let message = 
-    {
-      Type: messageTypes.CREATEROOM,
-      Content : JSON.stringify(Content),
-      Timestamp: Date.now()
-    };
 ///console.log(message);
 UsersLoop();
-//UsersLoopByID();
-//RoomLoop();
+RoomLoop();
 //db.Connect();
-//UserInRoomLoop();
+UserInRoomLoop();
 //console.log(db.Query("select * from user"));
 
 
@@ -98,18 +84,17 @@ const HandleMessage = async (socket, message) => {
   try 
   {
     const serverMessage = JSON.parse(message);
-    //console.log(serverMessage);
+    console.log(serverMessage);
     switch (serverMessage.Type) {
       case messageTypes.REQVALIDATION:
         let user = await msghand.HandleValidation(socket,serverMessage);
-        //Users[user.socket]=user;
-        Users[user.id]=user;
+        Users[user.socket]=user;
         break;
       case messageTypes.PING:
         msghand.HandlePing(socket,serverMessage);
         break;
       case messageTypes.CREATEROOM:
-        await msghand.HandleCreateRoom(socket,serverMessage);
+        await msghand.HandleCreateRoom(socket,serverMessage,Users[socket].id);
         break;
       case messageTypes.JOINROOM:
         await msghand.HandleJoinRoom(socket,serverMessage,Users[socket].id);
@@ -159,45 +144,91 @@ const HandleMessage = async (socket, message) => {
   catch (e) 
   {
 
-    console.error('Received message error:', e.message, '\nMessage from server:', message);
+    console.error('Received message error:', e, '\nMessage from server:', message);
   }
 };
+//Ghost object to test locally
 /*
-
-HandleMessage(null,JSON.stringify(message))
-Content = {
-  RoomName:'RoomA',
-  Password:null
-  
-}
 let testUser = 
 {
   id:'test',
   name:'test',
-  socket:null,
+  socket:'socket1',
   valid:true
 }
+let testUser2 = 
+{
+  id:'test2',
+  name:'test2',
+  socket:'socket2',
+  valid:true
+}
+Users[testUser2.socket]=testUser2;
+Users[testUser.socket]=testUser;
+let Content = {
+  RoomName:'RoomA',
+  Password:null,
+  IsPublic:true,
+  MaxPlayers:10
+}
+
+let message = 
+    {
+      Type: messageTypes.CREATEROOM,
+      Content : JSON.stringify(Content),
+      Timestamp: Date.now()
+    };
+
+HandleMessage(testUser.socket,JSON.stringify(message))
+
+
+
+Content = {
+  RoomName:'RoomA',
+  Password:null
+}
+
 message = 
     {
       Type: messageTypes.JOINROOM,
       Content : JSON.stringify(Content),
       Timestamp: Date.now()
     };
-console.log(message);
-const Tester = async (testUser, message) =>
+
+const Tester = async (Usr, message) =>
 {
+  
   await new Promise(resolve => setTimeout(resolve, 1000));
-  msghand.HandleJoinRoom(testUser,(message));
+  console.log(message);
+  msghand.HandleJoinRoom(Usr.socket,(message),Users[Usr.socket].id);
   
 }
-Tester(testUser,(message));
-
-let testUser2 = 
+const Tester2 = async (Usr, message) =>
 {
-  id:'test2',
-  name:'test2',
-  socket:null,
-  valid:true
+  
+  await new Promise(resolve => setTimeout(resolve, 6000));
+  console.log(message);
+  msghand.HandleLeaveRoom(Usr.socket,(message),Users[Usr.socket].id);
+  
 }
+
+
 Tester(testUser2,(message));
+
+Content = {
+  RoomName:'RoomA' 
+}
+
+message = 
+    {
+      Type: messageTypes.LEAVEROOM,
+      Content : JSON.stringify(Content),
+      Timestamp: Date.now()
+    };
+
+Tester2(testUser2,(message));
+
+Tester2(testUser,(message));
+
+
 */
