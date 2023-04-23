@@ -57,13 +57,6 @@ public class MessageType
     public static List<string> CUSTOM { get; set; }
 }
 
-public enum ErrorCode
-{
-    None = 0,
-    InvalidCredientials = 1,
-
-}
-
 public interface IMessage
 {
     public string Type { get; set; }

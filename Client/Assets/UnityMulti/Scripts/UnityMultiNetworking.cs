@@ -40,38 +40,38 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     private bool isAppPlaying = false;
 
     public delegate void ServerMessageE(Message serverMessage);
-    public event ServerMessageE CustomMessage;
+    public event ServerMessageE CustomMessageEvent;
 
     public delegate void ErrorE(ErrorEventArgs error);
-    public event ErrorE ClientError;
+    public event ErrorE ClientErrorEvent;
 
     public delegate void ConnectedE();
-    public event ConnectedE ClientConnectedAndReady;
+    public event ConnectedE ClientConnectedAndReadyEvent;
 
     public delegate void DisconnectedE(CloseEventArgs close);
-    public event DisconnectedE ClientDisconnected;
+    public event DisconnectedE ClientDisconnectedEvent;
 
     public delegate void ConnectionStateE();
-    public event ConnectionStateE ConnectionStateChange;
+    public event ConnectionStateE ConnectionStateChangeEvent;
 
     public delegate void InitialConnectionE();
-    public event InitialConnectionE InitialConnection;
+    public event InitialConnectionE InitialConnectionEvent;
 
-    public delegate void ValidationErrorE(ErrorCode errorCode, string ErrorMessage);
-    public event ValidationErrorE ValidationError;
+    public delegate void MultiErrorE(ErrorCode errorCode);
+    public event MultiErrorE MultiErrorEvent;
 
     private delegate void ReconnectE(CloseEventArgs close);
     private event ReconnectE ReconnectEvent;
 
-    public delegate void RoomE();
-    public event RoomE JoinRoomEvent;
+    public delegate void JoinRoomE(string roomName);
+    public event JoinRoomE JoinRoomEvent;
 
-    public delegate void RoomFailedE(string error);
-    public event RoomFailedE CreateRoomFailed;
+    public delegate void CreateRoomE(string roomName);
+    public event CreateRoomE CreateRoomEvent;
 
     public delegate void RoomClientChangeE(UnityMultiUser user);
-    public event RoomClientChangeE ClientJoin;
-    public event RoomClientChangeE ClientLeave;
+    public event RoomClientChangeE ClientJoinEvent;
+    public event RoomClientChangeE ClientLeaveEvent;
 
     protected override void Awake()
     {
@@ -128,30 +128,30 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         ws.OnOpen += (sender, args) =>
         {
             UnityMainThreadDispatcher.Instance().Enqueue(() => {
-                InitialConnection?.Invoke();
-                ConnectionStateChange?.Invoke();
+                InitialConnectionEvent?.Invoke();
+                ConnectionStateChangeEvent?.Invoke();
                 RequestValidation();
             });
         };
 
         ws.OnMessage += (sender, message) =>
         {
-            UnityMainThreadDispatcher.Instance().Enqueue(() => OnServerMessage(message.Data));          
+            UnityMainThreadDispatcher.Instance().Enqueue(() => OnServerMessage(message.Data));
         };
 
         ws.OnError += (sender, error) =>
         {
             UnityMainThreadDispatcher.Instance().Enqueue(() => {
-                ClientError?.Invoke(error);
-                ConnectionStateChange?.Invoke();
+                ClientErrorEvent?.Invoke(error);
+                ConnectionStateChangeEvent?.Invoke();
             });
         };
 
         ws.OnClose += (sender, close) =>
         {
             UnityMainThreadDispatcher.Instance().Enqueue(() => {
-                ClientDisconnected?.Invoke(close);
-                ConnectionStateChange?.Invoke();
+                ClientDisconnectedEvent?.Invoke(close);
+                ConnectionStateChangeEvent?.Invoke();
             });
             isConnectionReady = false;
             isValidated = false;
@@ -287,16 +287,27 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
     public void CreateRoom(UnityMultiRoomSettings settings)
     {
-        Debug.Log("IsVakudated: " + isValidated);
-        if (isValidated)
+        if(!isValidated)
+        {
+            MultiErrorEvent?.Invoke(ErrorCode.NotValidated);
+        }
+        else 
         {
             Message roomSettings = new Message(MessageType.CREATE_ROOM, JsonConvert.SerializeObject(settings), GetTimeNow());
-            Debug.Log("Settings: " + JsonConvert.SerializeObject(settings));
             SendMessage(roomSettings);
+        }
+    }
+
+    public void JoinRoom(UnityMultiRoomSettings settings)
+    {
+        if (!isValidated)
+        {
+            MultiErrorEvent?.Invoke(ErrorCode.NotValidated);
         }
         else
         {
-            CreateRoomFailed?.Invoke("Client isn't ready to join the room yet.");
+            Message roomSettings = new Message(MessageType.JOIN_ROOM, JsonConvert.SerializeObject(settings), GetTimeNow());
+            SendMessage(roomSettings);
         }
     }
 
@@ -313,16 +324,16 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             switch (serverMessage.Type)
             {
                 case MessageType.PONG:
-                    HandlePong(serverMessage.Content);
+                    HandlePong(serverMessage);
                     break;
                 case MessageType.VALIDATION_RESPONSE:
-                    HandleValidation(serverMessage.Content);
+                    HandleValidation(serverMessage);
                     break;
                 case MessageType.CREATE_ROOM_RESPONSE:
-                    HandleCreateRoom(serverMessage.Content);
+                    HandleCreateRoom(serverMessage);
                     break;
-                case MessageType.GAME_STATE:
-                    // handle game state message
+                case MessageType.JOIN_ROOM_RESPONSE:
+                    HandleJoinRoom(serverMessage);
                     break;
                 case MessageType.PLAYER_POSITION:
                     // handle player position message
@@ -345,7 +356,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
                 default:
                     if (MessageType.CUSTOM.Contains(serverMessage.Type))
                     {
-                        CustomMessage?.Invoke(serverMessage);
+                        CustomMessageEvent?.Invoke(serverMessage);
                     }
                     else
                     {
@@ -364,7 +375,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     /// method which set latency based on server message response time
     /// </summary>
     /// <param name="serverMessage"></param>
-    private void HandlePong(string serverMessage)
+    private void HandlePong(Message serverMessage)
     {
         latency = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - pingTimestamp;
     }
@@ -373,35 +384,56 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     /// validation handler
     /// </summary>
     /// <param name="serverMessage"></param>
-    private void HandleValidation(string serverMessage)
+    private void HandleValidation(Message serverMessage)
     {
-        UnityMultiValidationHelper.ValidationResult validationMessage = JsonConvert.DeserializeObject<UnityMultiValidationHelper.ValidationResult>(serverMessage);
+        ValidationResult validationMessage = JsonConvert.DeserializeObject<ValidationResult>(serverMessage.Content);
         clientData.SetUserId(validationMessage.UserID);
 
         if (validationMessage.Validated)
         {
             isValidated = true;
-            ClientConnectedAndReady?.Invoke();
+            ClientConnectedAndReadyEvent?.Invoke();
             StartCoroutine(SendPing());
         }
         else
         {
-            ValidationError?.Invoke(validationMessage.ErrorCode, UnityMultiValidationHelper.ValidationError(validationMessage));
+            MultiErrorEvent?.Invoke(serverMessage.ErrorCode);
             Disconnect();
         }
     }
-    private void HandleCreateRoom(string serverMessage)
+
+    private void HandleCreateRoom(Message serverMessage)
     {
-
+        if(serverMessage.ErrorCode != ErrorCode.None)
+        {
+            MultiErrorEvent?.Invoke(serverMessage.ErrorCode);
+        } 
+        else
+        {
+            UnityMultiRoomSettings roomSettings = JsonConvert.DeserializeObject<UnityMultiRoomSettings>(serverMessage.Content);
+            CreateRoomEvent?.Invoke(roomSettings.RoomName);
+        }
     }
+    private void HandleJoinRoom(Message serverMessage)
+    {
+        if (serverMessage.ErrorCode != ErrorCode.None)
+        {
+            MultiErrorEvent?.Invoke(serverMessage.ErrorCode);
+        }
+        else
+        {
+            UnityMultiRoom roomSettings = JsonConvert.DeserializeObject<UnityMultiRoom>(serverMessage.Content);
 
+            JoinRoomEvent?.Invoke(roomSettings.settings.RoomName);
+        }
+    }
     public void ClientJoinM(UnityMultiUser user)
     {
-        ClientJoin?.Invoke(user);
+        ClientJoinEvent?.Invoke(user);
     }
     public void ClientLeaveM(UnityMultiUser user)
     {
-        ClientLeave?.Invoke(user);
+        ClientLeaveEvent?.Invoke(user);
     }
     /// <summary>
     /// Coroutine that send ping to server every second to check response time
