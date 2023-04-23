@@ -16,16 +16,17 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
     private void Awake()
     {
         multiNetworking = UnityMultiNetworking.Instance;
-        multiNetworking.CustomMessage += OnCustomMessage;
-        multiNetworking.ClientError += OnClientError;
-        multiNetworking.ClientConnectedAndReady += OnClientConnected;
-        multiNetworking.ClientDisconnected += OnClientDisconnected;
-        multiNetworking.ConnectionStateChange += OnConnectionStateChange;
-        multiNetworking.InitialConnection += OnInitialConnection;
-        multiNetworking.ValidationError += OnValidationError;
-        multiNetworking.CreateRoomFailed += OnCreateRoomFailed;
-        multiNetworking.ClientJoin += OnClientJoin;
-        multiNetworking.ClientLeave += OnClientLeave;
+        multiNetworking.CustomMessageEvent += OnCustomMessage;
+        multiNetworking.ClientErrorEvent += OnClientError;
+        multiNetworking.ClientConnectedAndReadyEvent += OnClientConnected;
+        multiNetworking.ClientDisconnectedEvent += OnClientDisconnected;
+        multiNetworking.ConnectionStateChangeEvent += OnConnectionStateChange;
+        multiNetworking.InitialConnectionEvent += OnInitialConnection;
+        multiNetworking.MultiErrorEvent += OnValidationError;
+        multiNetworking.CreateRoomEvent += OnCreateRoom;
+        multiNetworking.JoinRoomEvent += OnJoinRoom;
+        multiNetworking.ClientJoinEvent += OnClientJoin;
+        multiNetworking.ClientLeaveEvent += OnClientLeave;
     }
 
     public virtual void OnClientError(ErrorEventArgs error)
@@ -61,14 +62,18 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
         Debug.Log("Validating user data");
     }
 
-    public virtual void OnValidationError(ErrorCode errorCode, string ErrorMessage)
+    public virtual void OnValidationError(ErrorCode errorCode)
     {
-        Debug.Log("Validation error: \nErrorCode: " + errorCode + "\nErrorMessage: " + ErrorMessage);
+        Debug.Log("Server error: \nErrorCode: " + errorCode + "\nErrorMessage: " + UnityMultiErrorHandler.ErrorMessage(errorCode));
     }
 
-    public virtual void OnCreateRoomFailed(string error)
+    public virtual void OnCreateRoom(string roomName)
     {
-        Debug.Log(error);
+        Debug.Log("Room: " + roomName + " created succesfully.");
+    }
+    public virtual void OnJoinRoom(string roomName)
+    {
+        Debug.Log("Room: " + roomName + " created succesfully.");
     }
 
     public virtual void OnClientJoin(UnityMultiUser user)
