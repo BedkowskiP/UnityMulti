@@ -64,16 +64,16 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
 
     public virtual void OnValidationError(ErrorCode errorCode)
     {
-        Debug.Log("Server error: \nErrorCode: " + errorCode + "\nErrorMessage: " + UnityMultiErrorHandler.ErrorMessage(errorCode));
+        Debug.Log("Server error: ErrorCode: " + errorCode + " | ErrorMessage: " + UnityMultiErrorHandler.ErrorMessage(errorCode));
     }
 
     public virtual void OnCreateRoom(string roomName)
     {
-        Debug.Log("Room: " + roomName + " created succesfully.");
+        Debug.Log("Room: '" + roomName + "' created succesfully.");
     }
     public virtual void OnJoinRoom(string roomName)
     {
-        Debug.Log("Room: " + roomName + " created succesfully.");
+        Debug.Log("Joined room '" + roomName + "' succesfully.");
     }
 
     public virtual void OnClientJoin(UnityMultiUser user)

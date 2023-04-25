@@ -39,6 +39,8 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
     private bool isAppPlaying = false;
 
+    private bool isInRoom = false;
+
     public delegate void ServerMessageE(Message serverMessage);
     public event ServerMessageE CustomMessageEvent;
 
@@ -277,10 +279,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     /// </summary>
     private void RequestValidation()
     {
-        Message validationRequest = new Message();
-        validationRequest.Type = MessageType.VALIDATION_REQUEST;
-        validationRequest.Content = JsonConvert.SerializeObject(clientData);
-        validationRequest.Timestamp = GetTimeNow();
+        Message validationRequest = new Message(MessageType.VALIDATION_REQUEST, JsonConvert.SerializeObject(clientData), GetTimeNow(), clientData.UserID );
 
         SendMessage(validationRequest);
     }
@@ -293,7 +292,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         }
         else 
         {
-            Message roomSettings = new Message(MessageType.CREATE_ROOM, JsonConvert.SerializeObject(settings), GetTimeNow());
+            Message roomSettings = new Message(MessageType.CREATE_ROOM, JsonConvert.SerializeObject(settings), GetTimeNow(), clientData.UserID);
             SendMessage(roomSettings);
         }
     }
@@ -306,7 +305,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         }
         else
         {
-            Message roomSettings = new Message(MessageType.JOIN_ROOM, JsonConvert.SerializeObject(settings), GetTimeNow());
+            Message roomSettings = new Message(MessageType.JOIN_ROOM, JsonConvert.SerializeObject(settings), GetTimeNow(), clientData.UserID);
             SendMessage(roomSettings);
         }
     }
@@ -418,13 +417,21 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     {
         if (serverMessage.ErrorCode != ErrorCode.None)
         {
+            Debug.Log(serverMessage.ErrorCode);
             MultiErrorEvent?.Invoke(serverMessage.ErrorCode);
         }
         else
         {
-            UnityMultiRoom roomSettings = JsonConvert.DeserializeObject<UnityMultiRoom>(serverMessage.Content);
-
-            JoinRoomEvent?.Invoke(roomSettings.settings.RoomName);
+            if (isInRoom)
+            {
+                MultiErrorEvent?.Invoke(ErrorCode.AlreadyInRoom);
+            } 
+            else
+            {
+                UnityMultiRoom placeholder = JsonConvert.DeserializeObject<UnityMultiRoom>(serverMessage.Content);
+                isInRoom = true;
+                //JoinRoomEvent?.Invoke(roomData.Settings.RoomName);
+            }
         }
     }
     public void ClientJoinM(UnityMultiUser user)
@@ -443,7 +450,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     {
         while (IsConnected)
         {
-            Message pingMessage = new Message(MessageType.PING, GetTimeNow().ToString(), GetTimeNow());
+            Message pingMessage = new Message(MessageType.PING, GetTimeNow().ToString(), GetTimeNow(), clientData.UserID);
 
             SendMessage(pingMessage);
 
