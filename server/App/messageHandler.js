@@ -1,44 +1,41 @@
 const userData = require('./userData');
 const messageTypes = require('./messageTypes');
-const { Room } = require('./room');
+const usersMan = require('./usersManager')
 const roomsMan = require('./roomsManager')
 const Util = require("./servUtil")
 
 
 const DEBUGMODE= false;
 
-let message = {
-    Type: '',
-    Content: ''
-};
+
 
 
 const HandleValidation =  async (socket,jsonmsg) => 
 {
   let content = JSON.parse(jsonmsg.Content)
-  let id = await Util.createUserId();
-  let usrn= "";
+  content.UserID = await Util.createUserId();
+  //add unique check !!!!!!!!!!!!!!!!
   /// ErrorCode 100-200 validation
   /// 0 - succes
   /// 101 - wrong username
   /// 102 - later
-  let isErrorCode = 1;
+  let isErrorCode = 101;
   let isValid = false;
   
-  if(content.Username==""||content.Username==null)usrn=id;
-  else usrn=content.Username;
-
+  if(content.Username==""||content.Username==null)content.Username=content.UserID;
   if(content.Username=="betek") //case sensetive only
+  //check if username is valid
   //if(jsonmsg.Content.username.localeCompare("Betek")==0)// case sensitive with no accents
   {
     isValid = true
     isErrorCode = 0;
-  } 
+  }
+  await usersMan.AddUser(content,isValid,socket);
   //-1 - username has wrong casing 0 - correct nad 1 - wrong // pewnie potem haslo i zapytanie do abzy danych
   let jsonContent =
   {
-      UserID : id,
-      Username : usrn,
+      UserID : content.UserID,
+      Username : content.Username,
       Validated : isValid
   };
   message = 
@@ -48,15 +45,8 @@ const HandleValidation =  async (socket,jsonmsg) =>
     ErrorCode : isErrorCode,
     Timestamp: Date.now() // CHANGE LATER
   }
-  let user = {id:id,name:usrn,socket:socket,valid:isValid}
-    /*
-  user.id=id;
-  user.name=usrn;
-  user.socket=socket;
-  user.valid=isValid;*/
-  //console.log(message);
+  console.log(message);
   if(socket!=null)socket.send(JSON.stringify(message));
-  return user;
 }
 const HandlePing = async (socket,msg) => {
     message = 
@@ -66,11 +56,11 @@ const HandlePing = async (socket,msg) => {
       Timestamp: Date.now()
     };
     //console.log(message);
-    if(socket!=null)socket.send(JSON.stringify(message));
+    //if(socket!=null)socket.send(JSON.stringify(message));
   };
 
 //#region ROOMS
-const HandleCreateRoom = async (socket,jsonmsg,Userid) =>
+const HandleCreateRoom = async (socket,jsonmsg) =>
 {
   ///error 200-300 ROOMS
   let content = JSON.parse(jsonmsg.Content)
@@ -78,50 +68,48 @@ const HandleCreateRoom = async (socket,jsonmsg,Userid) =>
   ///
   ///ADD CHECK for maxplayers/ ROOM NAME/PASSWORD/ISPUBLIC IF BAD ADD ERROR CODE
   ///
-  let room = new Room(content.RoomName,Userid,content.Password,content.IsPublic,content.MaxPlayers)
-  await roomsMan.AddRoom(room);
-  let jsonContent =
-  {
-    RoomName:content.RoomName,
-  };
-  message = 
+  
+  
+  await roomsMan.AddRoom(content);
+  let message = 
   {
     Type : messageTypes.RESCREATEROOM,
-    Content : JSON.stringify(jsonContent),
+    Content : JSON.stringify(content),
     ErrorCode : isErrorCode, //0 succesfully created room //201 to create failed beacuse something
     Timestamp: Date.now() // CHANGE LATER
   }
-  //console.log(message);
+  console.log(message);
   if(socket!=null)socket.send(JSON.stringify(message));
   
-  await HandleJoinRoom(socket,jsonmsg,Userid)
+  await HandleJoinRoom(socket,jsonmsg)
 }
-const HandleJoinRoom = async (socket,jsonmsg,Userid) =>
+const HandleJoinRoom = async (socket,jsonmsg) =>
 {
   let isErrorCode = 0;
   let content = JSON.parse(jsonmsg.Content)
   
-  roomsMan.AddUserToRoom(content.RoomName,Userid);
+  roomsMan.AddUserToRoom(content.RoomName,jsonmsg.UserID);
+
   ///check if room id/name exist
   //console.log(roomsMan.GetUsersInRoom(content.RoomID));
   
   let jsonContent =
   {
-    RoomName: content.RoomName,
+    Settings: content,
     UserList: await(roomsMan.GetUsersInRoom(content.RoomName))
   };
-  message = 
+  let message = 
   {
     Type : messageTypes.RESJOINROOM,
     Content : JSON.stringify(jsonContent),
     ErrorCode : isErrorCode, //0 Succesfully joined room // 201 failed to join room
     Timestamp: Date.now() // CHANGE LATER
   }
-  //console.log(message);
+  console.log(message);
   if(socket!=null)socket.send(JSON.stringify(message));
 
 }
-const HandleLeaveRoom = async (socket,jsonmsg,Userid) =>
+const HandleLeaveRoom = async (socket,jsonmsg) =>
 {
 
   //make checks for if user in room if room still exist so on
@@ -131,14 +119,15 @@ const HandleLeaveRoom = async (socket,jsonmsg,Userid) =>
   {
     RoomName: content.RoomName
   };
-  message = 
+  let message = 
   {
     Type : messageTypes.RESLEAVEROOM,
     Content : JSON.stringify(jsonContent),
     ErrorCode : isErrorCode, 
     Timestamp: Date.now()
   }
-  await roomsMan.RemoveUserFromRoom(content.RoomName,Userid)
+  await roomsMan.RemoveUserFromRoom(content.RoomName,jsonmsg.UserID);
+  console.log(message)
   if(socket!=null)socket.send(JSON.stringify(message));
 }
 HandleLeaveRoom

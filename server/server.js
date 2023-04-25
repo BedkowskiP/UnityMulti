@@ -2,12 +2,8 @@ const WebSocket = require('ws');
 const msghand = require('./App/messageHandler')
 const messageTypes = require('./App/messageTypes');
 const DB = require('./App/database');
-const roomsMan = require('./App/roomsManager')
-
-
-let Users = {
-
-};
+const roomsMan = require('./App/roomsManager');
+const usersMan = require('./App/usersManager');
 
 
 
@@ -25,17 +21,15 @@ const db = new DB.database(
 
 const UsersLoop = async () => {
   while(true){
-    for (const socket in Users) 
-      console.log(Users[socket].id);
+    for (const key in usersMan.Users) 
+      console.log("Users connected ID: ",usersMan.Users[key].id);
     await new Promise(resolve => setTimeout(resolve, 5000));
   }
 };
 
 const RoomLoop = async () => {
   while(true){  
-    for (const name in roomsMan.Rooms) {
-      console.log(roomsMan.Rooms[name].name);
-    }
+    for (const name in roomsMan.Rooms)console.log(roomsMan.Rooms[name].name);
     await new Promise(resolve => setTimeout(resolve, 5000));
   }
 };
@@ -74,6 +68,7 @@ server.on('connection', (socket) => {
       for (let userId in Users) {
         if (Users[userId].socket === socket) {
             delete Users[userId];
+            //remove users from all instances on disconnet !!!!!!!!!!!!!!!
             break;
         }
       }
@@ -87,17 +82,16 @@ const HandleMessage = async (socket, message) => {
     console.log(serverMessage);
     switch (serverMessage.Type) {
       case messageTypes.REQVALIDATION:
-        let user = await msghand.HandleValidation(socket,serverMessage);
-        Users[user.socket]=user;
+        await msghand.HandleValidation(socket,serverMessage);
         break;
       case messageTypes.PING:
-        msghand.HandlePing(socket,serverMessage);
+        await msghand.HandlePing(socket,serverMessage);//test later
         break;
       case messageTypes.CREATEROOM:
-        await msghand.HandleCreateRoom(socket,serverMessage,Users[socket].id);
+        await msghand.HandleCreateRoom(socket,serverMessage);
         break;
       case messageTypes.JOINROOM:
-        await msghand.HandleJoinRoom(socket,serverMessage,Users[socket].id);
+        await msghand.HandleJoinRoom(socket,serverMessage);
         break;
       case messageTypes.LEAVEROOM:
         await msghand.HandleLeaveRoom(socket,serverMessage);
@@ -148,87 +142,117 @@ const HandleMessage = async (socket, message) => {
   }
 };
 //Ghost object to test locally
+//adding users and createing
 /*
-let testUser = 
-{
-  id:'test',
-  name:'test',
-  socket:'socket1',
-  valid:true
-}
-let testUser2 = 
-{
-  id:'test2',
-  name:'test2',
-  socket:'socket2',
-  valid:true
-}
-Users[testUser2.socket]=testUser2;
-Users[testUser.socket]=testUser;
 let Content = {
-  RoomName:'RoomA',
-  Password:null,
-  IsPublic:true,
-  MaxPlayers:10
+  Username:"betek",
+  UserID:null
 }
-
 let message = 
     {
-      Type: messageTypes.CREATEROOM,
+      Type: messageTypes.REQVALIDATION,
       Content : JSON.stringify(Content),
-      Timestamp: Date.now()
+      Timestamp: Date.now(),
+      UserID : null
     };
-
-HandleMessage(testUser.socket,JSON.stringify(message))
-
-
-
-Content = {
-  RoomName:'RoomA',
-  Password:null
-}
-
-message = 
-    {
-      Type: messageTypes.JOINROOM,
-      Content : JSON.stringify(Content),
-      Timestamp: Date.now()
-    };
-
-const Tester = async (Usr, message) =>
+const TesterValid = async (message) =>
 {
   
   await new Promise(resolve => setTimeout(resolve, 1000));
-  console.log(message);
-  msghand.HandleJoinRoom(Usr.socket,(message),Users[Usr.socket].id);
+  await HandleMessage(null,message);
   
 }
-const Tester2 = async (Usr, message) =>
+TesterValid(JSON.stringify(message));
+TesterValid(JSON.stringify(message));
+
+
+//create room
+
+const TesterCreate = async () =>
+{
+  
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  let Content2 = {
+    RoomName:'Room1',
+    Password:null,
+    IsPublic:true,
+    MaxPlayers:10
+  }
+  
+  let message2 = 
+      {
+        Type: messageTypes.CREATEROOM,
+        Content : JSON.stringify(Content2),
+        Timestamp: Date.now(),
+        UserID : Object.keys(usersMan.Users)[0]
+      };
+  await HandleMessage(null,JSON.stringify(message2));
+  
+}
+TesterCreate()
+
+//join room
+
+
+
+const Tester = async (message) =>
+{
+  await new Promise(resolve => setTimeout(resolve, 4000));
+  Content = {
+    RoomName:'Room1',
+    Password:null
+  }
+  
+  message = 
+      {
+        Type: messageTypes.JOINROOM,
+        Content : JSON.stringify(Content),
+        Timestamp: Date.now(),
+        UserID : Object.keys(usersMan.Users)[1]
+      };
+  
+  await HandleMessage(null,JSON.stringify(message));
+  
+}
+
+
+
+ Tester();
+
+//leave room
+const Tester2 = async ( message) =>
 {
   
   await new Promise(resolve => setTimeout(resolve, 6000));
-  console.log(message);
-  msghand.HandleLeaveRoom(Usr.socket,(message),Users[Usr.socket].id);
+  Content = {
+    RoomName:'Room1' 
+  }
+  
+  message = 
+      {
+        Type: messageTypes.LEAVEROOM,
+        Content : JSON.stringify(Content),
+        Timestamp: Date.now(),
+        UserID : Object.keys(usersMan.Users)[0]
+      };
+    await HandleMessage(null,JSON.stringify(message));
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  message = 
+      {
+        Type: messageTypes.LEAVEROOM,
+        Content : JSON.stringify(Content),
+        Timestamp: Date.now(),
+        UserID : Object.keys(usersMan.Users)[1]
+      };
+  
+  await HandleMessage(null,JSON.stringify(message));
   
 }
 
 
-Tester(testUser2,(message));
 
-Content = {
-  RoomName:'RoomA' 
-}
-
-message = 
-    {
-      Type: messageTypes.LEAVEROOM,
-      Content : JSON.stringify(Content),
-      Timestamp: Date.now()
-    };
-
-Tester2(testUser2,(message));
-
-Tester2(testUser,(message));
+Tester2((message));
 
 
 */

@@ -1,6 +1,3 @@
-const { room, Room } = require('./room');
-const { user } = require('./userData');
-
 let Rooms =
 {
 
@@ -11,15 +8,15 @@ let UserInRoom =
 }
 
 
-const AddRoom = async (room) =>
+const AddRoom = async (content) =>
 {
-    Rooms[room.id]=room;
-
-
+    let room = new Room(content.RoomName,content.Userid,content.Password,content.IsPublic,content.MaxPlayers)
+    Rooms[room.name]=room;
 }
-const AddUserToRoom = async (RoomName,UserID) =>
+const AddUserToRoom = async (RoomName,userID,username) =>
 {
-    UserInRoom[UserID]=RoomName;
+    UserInRoom[userID]=RoomName;
+    Rooms[RoomName].users.push({ Username: username, UserID: userID });
     //console.log(UserInRoom);
 }
 const RemoveUserFromRoom = async (RoomName,UserID) =>
@@ -30,13 +27,10 @@ const RemoveUserFromRoom = async (RoomName,UserID) =>
     //FIX LATER Cannot read properties of undefined (reading 'host')
     //else if(Rooms[RoomName].host===UserID)ChooseNewHost();//host left but still users inside
 }
+
 const GetUsersInRoom = async (RoomName) =>
 {
-    const result = {};
-
-    for (const key in UserInRoom) {
-        if (UserInRoom.hasOwnProperty(key) && UserInRoom[key] === RoomName)result[key] = UserInRoom[key];
-    }
+    result = Rooms[RoomName].users;
     return result;
 }
 const GetUserRoom = async () =>
@@ -52,4 +46,21 @@ const ChooseNewHost = async () =>
 {
     console.error("to do ChooseNewHost");
 }
-module.exports={AddRoom,Rooms,GetUsersInRoom,AddUserToRoom,UserInRoom,RemoveUserFromRoom,GetUserRoom}
+class Room
+{
+    constructor(name,host,password,isPublic,maxPlayers)
+    {
+        this.name=name;
+        this.host=host
+        this.password=password
+        this.isPublic=isPublic
+        this.maxPlayers=maxPlayers
+        this.users=[]
+    } 
+}
+
+
+
+module.exports={AddRoom,Rooms,GetUsersInRoom,AddUserToRoom,UserInRoom,RemoveUserFromRoom,GetUserRoom,Room}
+
+
