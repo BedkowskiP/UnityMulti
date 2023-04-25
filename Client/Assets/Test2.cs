@@ -10,13 +10,12 @@ public class Test2 : UnityMultiNetworkingCallbacks
     void Start()
     {
         multiNetworking.Connect(url, "betek");
-        settings = new UnityMultiRoomSettings("RoomName");
+        settings = new UnityMultiRoomSettings("RoomNames");
     }
 
-    // Update is called once per frame
     void Update()
     {
-        //this.ms = multiNetworking.GetLatency();
+        this.ms = multiNetworking.GetLatency();
     }
 
     public override void OnClientConnected()
