@@ -1,11 +1,11 @@
-const userData = require('./userData');
+
 const messageTypes = require('./messageTypes');
 const usersMan = require('./usersManager')
 const roomsMan = require('./roomsManager')
 const Util = require("./servUtil")
+const MSG = require('./message')
 
-
-const DEBUGMODE= false;
+const DEBUGMODE = false;  //shows outcoming msgs                           
 
 
 
@@ -38,25 +38,13 @@ const HandleValidation =  async (socket,jsonmsg) =>
       Username : content.Username,
       Validated : isValid
   };
-  message = 
-  {
-    Type : messageTypes.RESVALIDATION,
-    Content : JSON.stringify(jsonContent),
-    ErrorCode : isErrorCode,
-    Timestamp: Date.now() // CHANGE LATER
-  }
-  console.log(message);
-  if(socket!=null)socket.send(JSON.stringify(message));
+  let msg = JSON.stringify(MSG.CreateMsg(messageTypes.RESVALIDATION,jsonContent,isErrorCode,DEBUGMODE))
+  if(socket!=null)socket.send(msg);
 }
-const HandlePing = async (socket,msg) => {
-    message = 
-    {
-      Type: messageTypes.PONG,
-      Content : msg.Timestamp,
-      Timestamp: Date.now()
-    };
-    //console.log(message);
-    //if(socket!=null)socket.send(JSON.stringify(message));
+const HandlePing = async (socket,jsonmsg) => {
+    let isErrorCode = 0;
+    let msg=JSON.stringify(MSG.CreateMsg(messageTypes.PONG,jsonmsg.Timestamp,isErrorCode,DEBUGMODE))
+    if(socket!=null)socket.send(msg);
   };
 
 //#region ROOMS
@@ -68,27 +56,16 @@ const HandleCreateRoom = async (socket,jsonmsg) =>
   ///
   ///ADD CHECK for maxplayers/ ROOM NAME/PASSWORD/ISPUBLIC IF BAD ADD ERROR CODE
   ///
-  
-  
-  await roomsMan.AddRoom(content);
-  let message = 
-  {
-    Type : messageTypes.RESCREATEROOM,
-    Content : JSON.stringify(content),
-    ErrorCode : isErrorCode, //0 succesfully created room //201 to create failed beacuse something
-    Timestamp: Date.now() // CHANGE LATER
-  }
-  console.log(message);
-  if(socket!=null)socket.send(JSON.stringify(message));
-  
+  await roomsMan.AddRoom(content,jsonmsg.UserID);
+  let msg = JSON.stringify((MSG.CreateMsg(messageTypes.RESCREATEROOM,content,isErrorCode,DEBUGMODE)))
+  if(socket!=null)socket.send(msg);
   await HandleJoinRoom(socket,jsonmsg)
 }
 const HandleJoinRoom = async (socket,jsonmsg) =>
 {
   let isErrorCode = 0;
   let content = JSON.parse(jsonmsg.Content)
-  
-  roomsMan.AddUserToRoom(content.RoomName,jsonmsg.UserID);
+  await roomsMan.AddUserToRoom(content.RoomName,jsonmsg.UserID,usersMan.Users[jsonmsg.UserID].name); 
 
   ///check if room id/name exist
   //console.log(roomsMan.GetUsersInRoom(content.RoomID));
@@ -96,17 +73,19 @@ const HandleJoinRoom = async (socket,jsonmsg) =>
   let jsonContent =
   {
     Settings: content,
-    UserList: await(roomsMan.GetUsersInRoom(content.RoomName))
+    UserList: await(roomsMan.GetUsersInRoom(content.RoomName))//get list of users that joined given room   "list:[id:name,id:name]"
   };
-  let message = 
+  let msg = JSON.stringify(MSG.CreateMsg(messageTypes.RESJOINROOM,jsonContent,isErrorCode,DEBUGMODE))
+  if(socket!=null)socket.send(msg);
+  //broadcast to users in room
+  jsonContent =
   {
-    Type : messageTypes.RESJOINROOM,
-    Content : JSON.stringify(jsonContent),
-    ErrorCode : isErrorCode, //0 Succesfully joined room // 201 failed to join room
-    Timestamp: Date.now() // CHANGE LATER
+    UserID : jsonmsg.UserID,
+    Username : usersMan.Users[jsonmsg.UserID].name
   }
-  console.log(message);
-  if(socket!=null)socket.send(JSON.stringify(message));
+  msg = JSON.stringify((MSG.CreateMsg(messageTypes.USERJOIN,jsonContent,isErrorCode,DEBUGMODE)))
+  roomsMan.BroadcastMsgToUsersInRoom(content.RoomName,msg,jsonmsg.UserID);
+  //msg = JSON.stringify(MSG.CreateMsg(messageTypes.USERJOIN,jsonContent,isErrorCode,true))
 
 }
 const HandleLeaveRoom = async (socket,jsonmsg) =>
@@ -119,18 +98,19 @@ const HandleLeaveRoom = async (socket,jsonmsg) =>
   {
     RoomName: content.RoomName
   };
-  let message = 
-  {
-    Type : messageTypes.RESLEAVEROOM,
-    Content : JSON.stringify(jsonContent),
-    ErrorCode : isErrorCode, 
-    Timestamp: Date.now()
-  }
   await roomsMan.RemoveUserFromRoom(content.RoomName,jsonmsg.UserID);
-  console.log(message)
-  if(socket!=null)socket.send(JSON.stringify(message));
+  let msg = JSON.stringify(MSG.CreateMsg(messageTypes.RESLEAVEROOM,jsonContent,isErrorCode,DEBUGMODE))
+  if(socket!=null)socket.send(msg);
+  //broadcast to users in room
+  jsonContent =
+  {
+    UserID : jsonmsg.UserID,
+    Username : usersMan.Users[jsonmsg.UserID].name
+  }
+  msg = JSON.stringify((MSG.CreateMsg(messageTypes.USERLEAVE,jsonContent,isErrorCode,DEBUGMODE)))
+  await roomsMan.BroadcastMsgToUsersInRoom(content.RoomName,msg,jsonmsg.UserID);
 }
-HandleLeaveRoom
+
 //#endregion
 
 module.exports = {

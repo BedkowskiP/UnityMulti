@@ -5,7 +5,7 @@ const DB = require('./App/database');
 const roomsMan = require('./App/roomsManager');
 const usersMan = require('./App/usersManager');
 
-
+const DEBUGMODE= false;   //shows incoming msgs
 
 const server = new WebSocket.Server({
   host: 'localhost',
@@ -29,7 +29,7 @@ const UsersLoop = async () => {
 
 const RoomLoop = async () => {
   while(true){  
-    for (const name in roomsMan.Rooms)console.log(roomsMan.Rooms[name].name);
+    for (const name in roomsMan.Rooms)console.log("Rooms created with name: ",roomsMan.Rooms[name].name);
     await new Promise(resolve => setTimeout(resolve, 5000));
   }
 };
@@ -46,11 +46,10 @@ process.argv.forEach(function (val, index) {
 
 
 
-///console.log(message);
 UsersLoop();
-RoomLoop();
+//RoomLoop();
 //db.Connect();
-UserInRoomLoop();
+//UserInRoomLoop();
 //console.log(db.Query("select * from user"));
 
 
@@ -65,9 +64,9 @@ server.on('connection', (socket) => {
   
     socket.on('close', (code) => {
       console.log('Client disconnected with code: '+code);
-      for (let userId in Users) {
-        if (Users[userId].socket === socket) {
-            delete Users[userId];
+      for (let UserID in usersMan.Users) {
+        if (usersMan.Users[UserID].socket === socket) {
+            delete usersMan.Users[UserID];
             //remove users from all instances on disconnet !!!!!!!!!!!!!!!
             break;
         }
@@ -79,7 +78,7 @@ const HandleMessage = async (socket, message) => {
   try 
   {
     const serverMessage = JSON.parse(message);
-    console.log(serverMessage);
+    if(DEBUGMODE)console.log(serverMessage);
     switch (serverMessage.Type) {
       case messageTypes.REQVALIDATION:
         await msghand.HandleValidation(socket,serverMessage);
@@ -138,12 +137,12 @@ const HandleMessage = async (socket, message) => {
   catch (e) 
   {
 
-    console.error('Received message error:', e, '\nMessage from server:', message);
+    console.log('\x1b[41m%s\x1b[0m','Received message error:', e, '\nMessage from server:', message);
   }
 };
 //Ghost object to test locally
 //adding users and createing
-/*
+
 let Content = {
   Username:"betek",
   UserID:null
@@ -167,7 +166,7 @@ TesterValid(JSON.stringify(message));
 
 
 //create room
-
+/*
 const TesterCreate = async () =>
 {
   
@@ -220,6 +219,8 @@ const Tester = async (message) =>
  Tester();
 
 //leave room
+
+
 const Tester2 = async ( message) =>
 {
   
@@ -253,6 +254,5 @@ const Tester2 = async ( message) =>
 
 
 Tester2((message));
-
-
 */
+
