@@ -3,6 +3,5 @@
 /Client/obj
 /Client/UserSettings
 /Client/Logs
-*.cache
-*.cache
 /server/node_modules
+*.cache
