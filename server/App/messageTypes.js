@@ -86,5 +86,7 @@ module.exports = {
     CUSTOM,
     RESCREATEROOM,
     RESJOINROOM,
-    RESLEAVEROOM
+    RESLEAVEROOM,
+    USERJOIN,
+    USERLEAVE
   };
