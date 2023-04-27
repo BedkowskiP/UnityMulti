@@ -2,19 +2,14 @@
 
 /// these messages are used for room managment
 /// Create,Join,Leave
-const ROOMSMANAGE = "roomsManagement";
-  ///
-  ///Room Actions
-  ///
   const LEAVEROOM = "leaveRoom";
   const JOINROOM = "joinRoom";
   const CREATEROOM = "createRoom"
   const RESCREATEROOM ="responseCreateRoom"
   const RESJOINROOM  ="responseJoinRoom"
   const RESLEAVEROOM = "responseLeaveRoom"
-  ///
-  ///Actions
-  ///
+  const RESHOSTCHANGE = "responseHostChange"
+  const HOSTCHANGE = "hostChange"
   ///broadcast to notify users in room
   const USERJOIN = "userJoin";
   const USERLEAVE = "userLeave";
@@ -64,7 +59,6 @@ const SERVER_MESSAGE = "serverMessage"; ///NOT IMPLEMENTED
 let CUSTOM = [];
 
 module.exports = {
-  ROOMSMANAGE,
   CREATEROOM,
   JOINROOM,
   LEAVEROOM,
@@ -88,5 +82,7 @@ module.exports = {
     RESJOINROOM,
     RESLEAVEROOM,
     USERJOIN,
-    USERLEAVE
+    USERLEAVE,
+    HOSTCHANGE,
+    RESHOSTCHANGE
   };

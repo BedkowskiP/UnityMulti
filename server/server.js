@@ -6,7 +6,7 @@ const roomsMan = require('./App/roomsManager');
 const usersMan = require('./App/usersManager');
 
 const DEBUGMODE= false;   //shows incoming msgs
-
+const TESTMODE = false;   //generate local users
 const server = new WebSocket.Server({
   host: 'localhost',
   port: 8080
@@ -46,8 +46,8 @@ process.argv.forEach(function (val, index) {
 
 
 
-UsersLoop();
-//RoomLoop();
+//UsersLoop();
+RoomLoop();
 //db.Connect();
 //UserInRoomLoop();
 //console.log(db.Query("select * from user"));
@@ -66,14 +66,17 @@ server.on('connection', (socket) => {
       console.log('Client disconnected with code: '+code);
       for (let UserID in usersMan.Users) {
         if (usersMan.Users[UserID].socket === socket) {
-            delete usersMan.Users[UserID];
-            //remove users from all instances on disconnet !!!!!!!!!!!!!!!
-            break;
+          Disconnect(UserID)
+          break;
         }
       }
     });
 });
-
+const Disconnect =  async (UserID)=>
+{
+  await roomsMan.RemoveUserFromRoom(await roomsMan.GetUserRoomname(UserID),UserID)
+  await usersMan.RemoveUser(UserID);
+}
 const HandleMessage = async (socket, message) => { 
   try 
   {
@@ -94,6 +97,9 @@ const HandleMessage = async (socket, message) => {
         break;
       case messageTypes.LEAVEROOM:
         await msghand.HandleLeaveRoom(socket,serverMessage);
+        break;
+      case messageTypes.HOSTCHANGE:
+        await msghand.HandleHostChange(socket,serverMessage);
         break;
       case messageTypes.DISCONNECT:
         // handle disconnect message
@@ -142,117 +148,136 @@ const HandleMessage = async (socket, message) => {
 };
 //Ghost object to test locally
 //adding users and createing
-
-let Content = {
-  Username:"betek",
-  UserID:null
-}
-let message = 
-    {
-      Type: messageTypes.REQVALIDATION,
-      Content : JSON.stringify(Content),
-      Timestamp: Date.now(),
-      UserID : null
-    };
-const TesterValid = async (message) =>
+if(TESTMODE)
 {
-  
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  await HandleMessage(null,message);
-  
-}
-TesterValid(JSON.stringify(message));
-TesterValid(JSON.stringify(message));
-
-
-//create room
-/*
-const TesterCreate = async () =>
-{
-  
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  let Content2 = {
-    RoomName:'Room1',
-    Password:null,
-    IsPublic:true,
-    MaxPlayers:10
+  let Content = {
+    Username:"betek",
+    UserID:null
   }
-  
-  let message2 = 
+  let message = 
       {
-        Type: messageTypes.CREATEROOM,
-        Content : JSON.stringify(Content2),
-        Timestamp: Date.now(),
-        UserID : Object.keys(usersMan.Users)[0]
-      };
-  await HandleMessage(null,JSON.stringify(message2));
-  
-}
-TesterCreate()
-
-//join room
-
-
-
-const Tester = async (message) =>
-{
-  await new Promise(resolve => setTimeout(resolve, 4000));
-  Content = {
-    RoomName:'Room1',
-    Password:null
-  }
-  
-  message = 
-      {
-        Type: messageTypes.JOINROOM,
+        Type: messageTypes.REQVALIDATION,
         Content : JSON.stringify(Content),
         Timestamp: Date.now(),
-        UserID : Object.keys(usersMan.Users)[1]
+        UserID : null
       };
-  
-  await HandleMessage(null,JSON.stringify(message));
-  
-}
-
-
-
- Tester();
-
-//leave room
-
-
-const Tester2 = async ( message) =>
-{
-  
-  await new Promise(resolve => setTimeout(resolve, 6000));
-  Content = {
-    RoomName:'Room1' 
-  }
-  
-  message = 
-      {
-        Type: messageTypes.LEAVEROOM,
-        Content : JSON.stringify(Content),
-        Timestamp: Date.now(),
-        UserID : Object.keys(usersMan.Users)[0]
-      };
-    await HandleMessage(null,JSON.stringify(message));
+  const TesterValid = async (message) =>
+  {
+    
     await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  message = 
-      {
-        Type: messageTypes.LEAVEROOM,
-        Content : JSON.stringify(Content),
-        Timestamp: Date.now(),
-        UserID : Object.keys(usersMan.Users)[1]
-      };
-  
-  await HandleMessage(null,JSON.stringify(message));
-  
+    await HandleMessage(null,message);
+    
+  }
+  TesterValid(JSON.stringify(message));
+  TesterValid(JSON.stringify(message));
+
+
+  //create room
+
+  const TesterCreate = async () =>
+  {
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    let Content2 = {
+      RoomName:'Room1',
+      Password:null,
+      IsPublic:true,
+      MaxPlayers:10
+    }
+    
+    let message2 = 
+        {
+          Type: messageTypes.CREATEROOM,
+          Content : JSON.stringify(Content2),
+          Timestamp: Date.now(),
+          UserID : Object.keys(usersMan.Users)[0]
+        };
+    await HandleMessage(null,JSON.stringify(message2));
+    
+  }
+  TesterCreate()
+
+  //join room
+
+
+
+  const Tester = async (message) =>
+  {
+    await new Promise(resolve => setTimeout(resolve, 4000));
+    Content = {
+      RoomName:'Room1',
+      Password:null
+    }
+    
+    message = 
+        {
+          Type: messageTypes.JOINROOM,
+          Content : JSON.stringify(Content),
+          Timestamp: Date.now(),
+          UserID : Object.keys(usersMan.Users)[1]
+        };
+    
+    await HandleMessage(null,JSON.stringify(message));
+    
+  }
+
+
+
+  Tester();
+  const Tester3 = async ( message) =>
+  { 
+      await new Promise(resolve => setTimeout(resolve, 6000));
+      Content = {
+        UserID:Object.keys(usersMan.Users)[1]
+      }
+      message = 
+        {
+          Type: messageTypes.HOSTCHANGE,
+          Content : JSON.stringify(Content),
+          Timestamp: Date.now(),
+          UserID : Object.keys(usersMan.Users)[0]
+        };
+      await HandleMessage(null,JSON.stringify(message));
+  }
+  Tester3();
+  //leave room
+
+/*
+  const Tester2 = async ( message) =>
+  {
+    
+    await new Promise(resolve => setTimeout(resolve, 6000));
+    Content = {
+      RoomName:'Room1' 
+    }
+    
+    message = 
+        {
+          Type: messageTypes.LEAVEROOM,
+          Content : JSON.stringify(Content),
+          Timestamp: Date.now(),
+          UserID : Object.keys(usersMan.Users)[0]
+        };
+      await HandleMessage(null,JSON.stringify(message));
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    message = 
+        {
+          Type: messageTypes.LEAVEROOM,
+          Content : JSON.stringify(Content),
+          Timestamp: Date.now(),
+          UserID : Object.keys(usersMan.Users)[1]
+        };
+    
+    await HandleMessage(null,JSON.stringify(message));
+    
+  }
+
+
+
+  Tester2((message));
+
+
+  */
 }
-
-
-
-Tester2((message));
-*/
-
