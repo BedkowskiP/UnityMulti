@@ -1,0 +1,19 @@
+1.4.27
++ Unique check for UserID
++ Removing User From all instances on disconnect/connection close   Note: 99% working
++ Added HostID to Respone Create/join room
++ Removed Password from content on respone
++ Added SceneName in (Room properties/ResponeJoinRoom) to notify users which scene to load
++ added hostChange and responseHostChange msgs
+
+- Add boradcast on host change
+- check roomname on createRoom
+- check password on createROom
+- check if isPublic is valid
+- check MaxPlayer if valid
+- ObjectList As array for everyroom with Transform/Owner/PrefabName
+- check if user requesting host change is host
+- choosenewHost choose first from list -> chose first from list except host unless 1 user in the room
+
+
+1.4.XX

@@ -10,7 +10,7 @@ const RemoveUser = async (UserID) =>
 {
     try
     {
-        delete Users[UserID];
+        await delete Users[UserID];
     }
     catch(e)
     {
@@ -31,7 +31,7 @@ class User
     } 
 }
 
-module.exports={AddUser,User,Users}
+module.exports={AddUser,User,Users,RemoveUser}
 
 
 

@@ -13,8 +13,15 @@ const DEBUGMODE = false;  //shows outcoming msgs
 const HandleValidation =  async (socket,jsonmsg) => 
 {
   let content = JSON.parse(jsonmsg.Content)
-  content.UserID = await Util.createUserId();
-  //add unique check !!!!!!!!!!!!!!!!
+  content.UserID = await Util.createUserId(usersMan.Users);//Creates UNIQUE ID
+  if(content.Username==""||content.Username==null)content.Username=content.UserID;//if USERNAME empty GUEST LOGIN
+  //else if (/^[0-9a-zA-Z_]+$/.test(content.Username))isErrorCode = 102;//invalid Username for register later
+  //else if (/^[0-9a-zA-Z_]+$/.test(content.Password))isErrorCode = 103;//invalid Username for register later
+  
+  if(true);//check if username has valid chracters
+  if(true);//check if password is correct DB
+  //Check for invalid signs
+
   /// ErrorCode 100-200 validation
   /// 0 - succes
   /// 101 - wrong username
@@ -22,7 +29,7 @@ const HandleValidation =  async (socket,jsonmsg) =>
   let isErrorCode = 101;
   let isValid = false;
   
-  if(content.Username==""||content.Username==null)content.Username=content.UserID;
+  
   if(content.Username=="betek") //case sensetive only
   //check if username is valid
   //if(jsonmsg.Content.username.localeCompare("Betek")==0)// case sensitive with no accents
@@ -38,13 +45,13 @@ const HandleValidation =  async (socket,jsonmsg) =>
       Username : content.Username,
       Validated : isValid
   };
-  let msg = JSON.stringify(MSG.CreateMsg(messageTypes.RESVALIDATION,jsonContent,isErrorCode,DEBUGMODE))
-  if(socket!=null)socket.send(msg);
+  let msg = JSON.stringify(await MSG.CreateMsg(messageTypes.RESVALIDATION,jsonContent,isErrorCode,DEBUGMODE))
+  socket?.send(msg);
 }
 const HandlePing = async (socket,jsonmsg) => {
     let isErrorCode = 0;
-    let msg=JSON.stringify(MSG.CreateMsg(messageTypes.PONG,jsonmsg.Timestamp,isErrorCode,DEBUGMODE))
-    if(socket!=null)socket.send(msg);
+    let msg=JSON.stringify(await MSG.CreateMsg(messageTypes.PONG,jsonmsg.Timestamp,isErrorCode,DEBUGMODE))
+    socket?.send(msg);
   };
 
 //#region ROOMS
@@ -56,9 +63,17 @@ const HandleCreateRoom = async (socket,jsonmsg) =>
   ///
   ///ADD CHECK for maxplayers/ ROOM NAME/PASSWORD/ISPUBLIC IF BAD ADD ERROR CODE
   ///
+
+  let jsonContent =
+  {
+    RoomName: content.RoomName, 
+    IsPublic: content.IsPublic, 
+    MaxPlayers: content.MaxPlayers,
+    HostID : jsonmsg.UserID
+  };
   await roomsMan.AddRoom(content,jsonmsg.UserID);
-  let msg = JSON.stringify((MSG.CreateMsg(messageTypes.RESCREATEROOM,content,isErrorCode,DEBUGMODE)))
-  if(socket!=null)socket.send(msg);
+  let msg = JSON.stringify((await MSG.CreateMsg(messageTypes.RESCREATEROOM,jsonContent,isErrorCode,DEBUGMODE)))
+  socket?.send(msg);
   await HandleJoinRoom(socket,jsonmsg)
 }
 const HandleJoinRoom = async (socket,jsonmsg) =>
@@ -66,28 +81,27 @@ const HandleJoinRoom = async (socket,jsonmsg) =>
   let isErrorCode = 0;
   let content = JSON.parse(jsonmsg.Content)
   await roomsMan.AddUserToRoom(content.RoomName,jsonmsg.UserID,usersMan.Users[jsonmsg.UserID].name); 
-
   ///check if room id/name exist
-  //console.log(roomsMan.GetUsersInRoom(content.RoomID));
-  
   let jsonContent =
   {
-    Settings: content,
-    UserList: await(roomsMan.GetUsersInRoom(content.RoomName))//get list of users that joined given room   "list:[id:name,id:name]"
+    Settings: { RoomName:content.RoomName,HostID:await roomsMan.GetRoomHost(content.RoomName)},
+    UserList: await(roomsMan.GetUsersInRoom(content.RoomName))//get list of users that joined given room   "list:[{UserID,Username},{UserID,Username}]"
   };
-  let msg = JSON.stringify(MSG.CreateMsg(messageTypes.RESJOINROOM,jsonContent,isErrorCode,DEBUGMODE))
-  if(socket!=null)socket.send(msg);
+  
+  let msg = JSON.stringify(await MSG.CreateMsg(messageTypes.RESJOINROOM,jsonContent,isErrorCode,DEBUGMODE))
+  socket?.send(msg);
   //broadcast to users in room
   jsonContent =
   {
     UserID : jsonmsg.UserID,
     Username : usersMan.Users[jsonmsg.UserID].name
   }
-  msg = JSON.stringify((MSG.CreateMsg(messageTypes.USERJOIN,jsonContent,isErrorCode,DEBUGMODE)))
-  roomsMan.BroadcastMsgToUsersInRoom(content.RoomName,msg,jsonmsg.UserID);
-  //msg = JSON.stringify(MSG.CreateMsg(messageTypes.USERJOIN,jsonContent,isErrorCode,true))
+  msg = JSON.stringify((await MSG.CreateMsg(messageTypes.USERJOIN,jsonContent,isErrorCode,DEBUGMODE)))
+  await roomsMan.BroadcastMsgToUsersInRoom(content.RoomName,msg,jsonmsg.UserID,usersMan.Users);
+
 
 }
+
 const HandleLeaveRoom = async (socket,jsonmsg) =>
 {
 
@@ -98,17 +112,30 @@ const HandleLeaveRoom = async (socket,jsonmsg) =>
   {
     RoomName: content.RoomName
   };
-  await roomsMan.RemoveUserFromRoom(content.RoomName,jsonmsg.UserID);
-  let msg = JSON.stringify(MSG.CreateMsg(messageTypes.RESLEAVEROOM,jsonContent,isErrorCode,DEBUGMODE))
-  if(socket!=null)socket.send(msg);
-  //broadcast to users in room
-  jsonContent =
+  if(1!=await roomsMan.RemoveUserFromRoom(content.RoomName,jsonmsg.UserID))//if function returns 1 it means room is about to be deleted no need to broadcast
   {
-    UserID : jsonmsg.UserID,
-    Username : usersMan.Users[jsonmsg.UserID].name
+    //broadcast to users in room
+    jsonContent =
+    {
+      UserID : jsonmsg.UserID,
+      Username : usersMan.Users[jsonmsg.UserID].name
+    }
+    let msg = JSON.stringify((await MSG.CreateMsg(messageTypes.USERLEAVE,jsonContent,isErrorCode,DEBUGMODE)))
+    await roomsMan.BroadcastMsgToUsersInRoom(content.RoomName,msg,jsonmsg.UserID,usersMan.Users);
   }
-  msg = JSON.stringify((MSG.CreateMsg(messageTypes.USERLEAVE,jsonContent,isErrorCode,DEBUGMODE)))
-  await roomsMan.BroadcastMsgToUsersInRoom(content.RoomName,msg,jsonmsg.UserID);
+  let msg = JSON.stringify(await MSG.CreateMsg(messageTypes.RESLEAVEROOM,jsonContent,isErrorCode,DEBUGMODE))
+  socket?.send(msg);
+  
+}
+const HandleHostChange = async (socket,jsonmsg) =>
+{
+    //CHECK IF USER CHANGING HOST HAS PREMISSION!!!!!!!!!!!!!!!!!!!
+    let content = JSON.parse(jsonmsg.Content)
+    const RoomName = await roomsMan.GetUserRoomname(jsonmsg.UserID);
+    if(content.UserID!=null)roomsMan.Rooms[RoomName].host=content.UserID;
+    else roomsMan.ChooseNewHost(RoomName)
+    console.log("hosthandler")
+    
 }
 
 //#endregion
@@ -118,5 +145,6 @@ module.exports = {
     HandleCreateRoom,
     HandleJoinRoom,
     HandleLeaveRoom,
-    HandlePing
+    HandlePing,
+    HandleHostChange
   };
