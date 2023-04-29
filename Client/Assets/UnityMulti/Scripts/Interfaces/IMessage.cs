@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -19,6 +20,9 @@ public class MessageType
     public const string USER_JOIN = "userJoin";
     public const string USER_LEAVE = "userLeave";
     public const string LEAVE_ROOM = "leaveRoom";
+    public const string LEAVE_ROOM_RESPONSE = "responseLeaveRoom";
+    public const string HOST_CHANGE = "hostChange";
+    public const string HOST_CHANGE_RESPONSE = "responseHostChange";
     /// <summary>
     /// these message types could be used to establisz connection between client and server.
     /// </summary>
@@ -78,6 +82,7 @@ public class Message : IMessage
     public ErrorCode ErrorCode { get; set; } = 0;
     public string UserID { get; set; }
 
+    [JsonConstructor]
     public Message(string type, string content, long timestamp, ErrorCode errorCode)
     {
         this.Type = type;
@@ -86,11 +91,17 @@ public class Message : IMessage
         this.ErrorCode = errorCode;
     }
 
+
     public Message(string type, string content, long timestamp, string UserID)
     {
         this.Type = type;
         this.Content = content;
         this.Timestamp = timestamp;
         this.UserID = UserID;
+    }
+    public Message(string type, string content)
+    {
+        this.Type = type;
+        this.Content = content;
     }
 }

@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
+using UnityEngine.SceneManagement;
 
 [RequireComponent(typeof(UnityMainThreadDispatcher))]
 public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDisposable
@@ -26,6 +27,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
     public string connectionURL { get; private set; }
     public bool _autoReconnect = true;
+    public bool _autoLoadScene = true;
     private bool _isReconnecting;
     public float ReconnectDelaySeconds = 10f;
     public int maxReconnectAttempt = 10;
@@ -65,25 +67,24 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     private delegate void ReconnectE(CloseEventArgs close);
     private event ReconnectE ReconnectEvent;
 
-    public delegate void JoinRoomE(string roomName);
-    public event JoinRoomE JoinRoomEvent;
-
-    public delegate void CreateRoomE(string roomName);
-    public event CreateRoomE CreateRoomEvent;
+    public delegate void RoomE(string roomName);
+    public event RoomE CreateRoomEvent;
+    public event RoomE JoinRoomEvent;
+    public event RoomE LeaveRoomEvent;
 
     public delegate void RoomClientChangeE(UnityMultiUser user);
     public event RoomClientChangeE ClientJoinEvent;
     public event RoomClientChangeE ClientLeaveEvent;
 
-    protected override void Awake()
-    {
-        base.Awake();
-        ReconnectEvent += Reconnect;
+    protected override void Awake() { 
+        roomData = new UnityMultiRoom(this);
     }
 
     private void Update()
     {
         IsApplicationPlaying();
+        if (!IsConnected) isInRoom = false;
+        if (!isValidated && isInRoom) isInRoom = false;
     }
     /// <summary>
     /// 
@@ -184,6 +185,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
                         new WaitForSeconds(ReconnectDelaySeconds);
                         reconnectAttempt++;
+                        Dispose();
                     }
 
                     if (reconnectAttempt >= maxReconnectAttempt)
@@ -221,18 +223,6 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     }
 
     /// <summary>
-    /// Send any string message to server
-    /// </summary>
-    /// <param name="message"></param>
-    public new void SendMessage(string message)
-    {
-        if (IsConnected)
-        {
-            ws.Send(message);
-        }
-    }
-
-    /// <summary>
     /// Variant of send message which send message to server in form of JSON
     /// </summary>
     /// <param name="message"></param>
@@ -240,6 +230,8 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     {
         if (IsConnected)
         {
+            message.Timestamp = GetTimeNow();
+            message.UserID = clientData.UserID;
             ws.Send(JsonConvert.SerializeObject(message));
         }
     }
@@ -279,7 +271,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     /// </summary>
     private void RequestValidation()
     {
-        Message validationRequest = new Message(MessageType.VALIDATION_REQUEST, JsonConvert.SerializeObject(clientData), GetTimeNow(), clientData.UserID );
+        Message validationRequest = new Message(MessageType.VALIDATION_REQUEST, JsonConvert.SerializeObject(clientData));
 
         SendMessage(validationRequest);
     }
@@ -292,7 +284,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         }
         else 
         {
-            Message roomSettings = new Message(MessageType.CREATE_ROOM, JsonConvert.SerializeObject(settings), GetTimeNow(), clientData.UserID);
+            Message roomSettings = new Message(MessageType.CREATE_ROOM, JsonConvert.SerializeObject(settings));
             SendMessage(roomSettings);
         }
     }
@@ -305,11 +297,34 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         }
         else
         {
-            Message roomSettings = new Message(MessageType.JOIN_ROOM, JsonConvert.SerializeObject(settings), GetTimeNow(), clientData.UserID);
+            Message roomSettings = new Message(MessageType.JOIN_ROOM, JsonConvert.SerializeObject(settings));
             SendMessage(roomSettings);
         }
     }
+    public void LeaveRoom()
+    {
+        if (!isInRoom)
+        {
+            MultiErrorEvent?.Invoke(ErrorCode.NotInRoom);
+        }
+        else
+        {
+            Message leaveMessage = new Message(MessageType.LEAVE_ROOM, JsonConvert.SerializeObject(roomData.Settings));
+            SendMessage(leaveMessage);
+        }
 
+    }
+
+    public void ChangeHost(UnityMultiUser user)
+    {
+        Message newHost = new Message(MessageType.HOST_CHANGE, JsonConvert.SerializeObject(user.UserID));
+        SendMessage(newHost);
+    }
+    public void ChangeHost()
+    {
+        Message newHost = new Message(MessageType.HOST_CHANGE, "{\"UserID\": \"\"}");
+        SendMessage(newHost);
+    }
 
     /// <summary>
     /// Base server message handler
@@ -334,17 +349,18 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
                 case MessageType.JOIN_ROOM_RESPONSE:
                     HandleJoinRoom(serverMessage);
                     break;
-                case MessageType.PLAYER_POSITION:
-                    // handle player position message
+                case MessageType.USER_JOIN:
+                    Debug.Log("UserJoin");
+                    HandleUserJoin(serverMessage);
                     break;
-                case MessageType.PLAYER_ROTATION:
-                    // handle player rotation message
+                case MessageType.USER_LEAVE:
+                    HandleUserLeave(serverMessage);
                     break;
-                case MessageType.PLAYER_SCALE:
-                    // handle player scale message
+                case MessageType.LEAVE_ROOM_RESPONSE:
+                    HandleLeaveRoom();
                     break;
-                case MessageType.SERVER_STATUS:
-                    // handle server status message
+                case MessageType.HOST_CHANGE_RESPONSE:
+                    HandleHostChange(serverMessage);
                     break;
                 case MessageType.CHAT_MESSAGE:
                     // handle chat message
@@ -428,11 +444,40 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             } 
             else
             {
-                UnityMultiRoom placeholder = JsonConvert.DeserializeObject<UnityMultiRoom>(serverMessage.Content);
                 isInRoom = true;
-                //JoinRoomEvent?.Invoke(roomData.Settings.RoomName);
+                UnityMultiRoom placeholder = JsonConvert.DeserializeObject<UnityMultiRoom>(serverMessage.Content);
+                roomData.SetSettings(placeholder.Settings);
+                if(roomData.Settings.SceneName != "" && roomData.Settings.SceneName != null)
+                {
+                    SceneManager.LoadScene(roomData.Settings.SceneName);
+                }
+                JoinRoomEvent?.Invoke(roomData.Settings.RoomName);
+                foreach (var user in placeholder.UserList)
+                {
+                    roomData.AddUser(user);
+                }
             }
         }
+    }
+    private void HandleLeaveRoom()
+    {
+        isInRoom = false;
+        LeaveRoomEvent?.Invoke(roomData.Settings.RoomName);
+    }
+    private void HandleUserLeave(Message serverMessage)
+    {
+        UnityMultiUser placeholder = JsonConvert.DeserializeObject<UnityMultiUser>(serverMessage.Content);
+        roomData.RemoveUser(placeholder);
+    }
+    private void HandleUserJoin(Message serverMessage)
+    {
+        UnityMultiUser placeholder = JsonConvert.DeserializeObject<UnityMultiUser>(serverMessage.Content);
+        roomData.AddUser(placeholder);
+    }
+    private void HandleHostChange(Message serverMessage)
+    {
+        UnityMultiUser placeholder = JsonConvert.DeserializeObject<UnityMultiUser>(serverMessage.Content);
+        roomData.SetNewHost(placeholder.UserID);
     }
     public void ClientJoinM(UnityMultiUser user)
     {
@@ -471,6 +516,12 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     private void IsApplicationPlaying()
     {
         isAppPlaying = Application.isPlaying;
+    }
+
+    public bool IsHost()
+    {
+        if (roomData.Settings.HostID == clientData.UserID) return true;
+        else return false;
     }
 
 
