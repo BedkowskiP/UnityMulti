@@ -25,6 +25,7 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
         multiNetworking.MultiErrorEvent += OnValidationError;
         multiNetworking.CreateRoomEvent += OnCreateRoom;
         multiNetworking.JoinRoomEvent += OnJoinRoom;
+        multiNetworking.LeaveRoomEvent += OnLeaveRoom;
         multiNetworking.ClientJoinEvent += OnClientJoin;
         multiNetworking.ClientLeaveEvent += OnClientLeave;
     }
@@ -32,7 +33,7 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
     public virtual void OnClientError(ErrorEventArgs error)
     {
         Debug.LogError(
-            "Error Exception: " + error.Exception + 
+            "Error Exception: " + error.Exception +
             "\nError Message: " + error.Message
             );
     }
@@ -76,12 +77,16 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
         Debug.Log("Joined room '" + roomName + "' succesfully.");
     }
 
+    public virtual void OnLeaveRoom(string roomName)
+    {
+        Debug.Log("You left room '" + roomName + "' succesfully");
+    }
     public virtual void OnClientJoin(UnityMultiUser user)
     {
         Debug.Log("User: " + user.Username + " joined the room");
     }
     public virtual void OnClientLeave(UnityMultiUser user)
     {
-        Debug.Log("User: "+user.Username+" left the room");
+        Debug.Log("User: " + user.Username + " left the room");
     }
 }

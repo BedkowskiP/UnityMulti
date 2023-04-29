@@ -12,6 +12,7 @@ public enum ErrorCode
     WrongUsername = 101,
     //200-299 rooms
     AlreadyInRoom = 202,
+    NotInRoom = 203,
 
 }
 
@@ -24,13 +25,15 @@ public static class UnityMultiErrorHandler
             case ErrorCode.None:
                 break;
             case ErrorCode.NotValidated:
-                return "Client isn't ready to join room yet";
+                return "Client isn't ready to join room yet.";
             case ErrorCode.WrongUsername:
-                return "Wrong username";
+                return "Wrong username.";
             case ErrorCode.AlreadyInRoom:
-                return "You are already in room. Try leaving one before joining another";
+                return "You are already in room. Try leaving one before joining another.";
+            case ErrorCode.NotInRoom:
+                return "Can't leave room if you aren't in one.";
             default:
-                return "Invalid error code";
+                return "Invalid error code.";
         }
 
         return "";

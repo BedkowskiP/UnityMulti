@@ -10,7 +10,7 @@ public class Test2 : UnityMultiNetworkingCallbacks
     void Start()
     {
         multiNetworking.Connect(url, "betek");
-        settings = new UnityMultiRoomSettings("RoomNames");
+        settings = new UnityMultiRoomSettings("RoomNames", "TurorialSceneTwo");
     }
 
     void Update()
