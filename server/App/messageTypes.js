@@ -13,7 +13,8 @@
   ///broadcast to notify users in room
   const USERJOIN = "userJoin";
   const USERLEAVE = "userLeave";
-
+  const UNITYOBJECT ="addUnityObject"
+  const UNITYOBJECTRES ="responeAddUnityObject"
 /// <summary>
 /// these messages are used check latency.
 /// </summary>
@@ -84,5 +85,7 @@ module.exports = {
     USERJOIN,
     USERLEAVE,
     HOSTCHANGE,
-    RESHOSTCHANGE
+    RESHOSTCHANGE,
+    UNITYOBJECT,
+    UNITYOBJECTRES
   };

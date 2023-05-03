@@ -5,7 +5,7 @@ const DB = require('./App/database');
 const roomsMan = require('./App/roomsManager');
 const usersMan = require('./App/usersManager');
 
-const DEBUGMODE= false;   //shows incoming msgs
+const DEBUGMODE= true;   //shows incoming msgs
 const TESTMODE = false;   //generate local users
 const server = new WebSocket.Server({
   host: 'localhost',
@@ -47,7 +47,7 @@ process.argv.forEach(function (val, index) {
 
 
 //UsersLoop();
-RoomLoop();
+//RoomLoop();
 //db.Connect();
 //UserInRoomLoop();
 //console.log(db.Query("select * from user"));
@@ -78,73 +78,79 @@ const Disconnect =  async (UserID)=>
   await usersMan.RemoveUser(UserID);
 }
 const HandleMessage = async (socket, message) => { 
-  try 
-  {
-    const serverMessage = JSON.parse(message);
-    if(DEBUGMODE)console.log(serverMessage);
-    switch (serverMessage.Type) {
-      case messageTypes.REQVALIDATION:
-        await msghand.HandleValidation(socket,serverMessage);
-        break;
-      case messageTypes.PING:
-        await msghand.HandlePing(socket,serverMessage);//test later
-        break;
-      case messageTypes.CREATEROOM:
-        await msghand.HandleCreateRoom(socket,serverMessage);
-        break;
-      case messageTypes.JOINROOM:
-        await msghand.HandleJoinRoom(socket,serverMessage);
-        break;
-      case messageTypes.LEAVEROOM:
-        await msghand.HandleLeaveRoom(socket,serverMessage);
-        break;
-      case messageTypes.HOSTCHANGE:
-        await msghand.HandleHostChange(socket,serverMessage);
-        break;
-      case messageTypes.DISCONNECT:
-        // handle disconnect message
-        break;
-      case messageTypes.USER_DATA_REQUEST:
-        // handle user data request message
-        break;
-      case messageTypes.USER_DATA_RESPONSE:
-        // handle user data response message
-        break;
-      case messageTypes.GAME_STATE:
-        // handle game state message
-        break;
-      case messageTypes.PLAYER_POSITION:
-        // handle player position message
-        break;
-      case messageTypes.PLAYER_ROTATION:
-        // handle player rotation message
-        break;
-      case messageTypes.PLAYER_SCALE:
-        // handle player scale message
-        break;
-      case messageTypes.SERVER_STATUS:
-        // handle server status message
-        break;
-      case messageTypes.CHAT_MESSAGE:
-        // handle chat message
-        break;
-      case messageTypes.SERVER_MESSAGE:
-        // handle server message
-        break;
-      default:
-        if (messageTypes.CUSTOM.includes(serverMessage.type)) {
-          // handle custom message type
-        } else {
-          // unknown message type
+    try 
+    {
+        const serverMessage = JSON.parse(message);
+        if(DEBUGMODE){if(serverMessage.Type!=messageTypes.PING)console.log(serverMessage);}
+        switch (serverMessage.Type) 
+        {
+            case messageTypes.REQVALIDATION:
+                await msghand.HandleValidation(socket,serverMessage);
+                break;
+            case messageTypes.PING:
+                await msghand.HandlePing(socket,serverMessage);//test later
+                break;
+            case messageTypes.CREATEROOM:
+                await msghand.HandleCreateRoom(socket,serverMessage);
+                break;
+            case messageTypes.JOINROOM:
+                await msghand.HandleJoinRoom(socket,serverMessage);
+                break;
+            case messageTypes.LEAVEROOM:
+                await msghand.HandleLeaveRoom(socket,serverMessage);
+                break;
+            case messageTypes.HOSTCHANGE:
+                await msghand.HandleHostChange(socket,serverMessage);
+                break;
+            case messageTypes.UNITYOBJECT:
+                await msghand.HandleObjectUnity(socket,serverMessage);
+                break;                
+            case messageTypes.DISCONNECT:
+                // handle disconnect message
+                break;
+            case messageTypes.USER_DATA_REQUEST:
+                // handle user data request message
+                break;
+            case messageTypes.USER_DATA_RESPONSE:
+                // handle user data response message
+                break;
+            case messageTypes.GAME_STATE:
+                // handle game state message
+                break;
+            case messageTypes.PLAYER_POSITION:
+                // handle player position message
+                break;
+            case messageTypes.PLAYER_ROTATION:
+                // handle player rotation message
+                break;
+            case messageTypes.PLAYER_SCALE:
+                // handle player scale message
+                break;
+            case messageTypes.SERVER_STATUS:
+                // handle server status message
+                break;
+            case messageTypes.CHAT_MESSAGE:
+                // handle chat message
+                break;
+            case messageTypes.SERVER_MESSAGE:
+                // handle server message
+                break;
+            default:
+                if (messageTypes.CUSTOM.includes(serverMessage.type)) 
+                {
+                  // handle custom message type
+                } 
+                else 
+                {
+                  // unknown message type
+                }
+                break;
         }
-        break;
+    } 
+    catch (e) 
+    {
+        console.log('\x1b[41m%s\x1b[0m','Received message error:', e, '\nMessage from server:', message);
     }
-  } 
-  catch (e) 
-  {
-
-    console.log('\x1b[41m%s\x1b[0m','Received message error:', e, '\nMessage from server:', message);
-  }
 };
 //Ghost object to test locally
 //adding users and createing
@@ -152,6 +158,7 @@ if(TESTMODE)
 {
   let Content = {
     Username:"betek",
+    Password:null,
     UserID:null
   }
   let message = 
@@ -182,7 +189,8 @@ if(TESTMODE)
       RoomName:'Room1',
       Password:null,
       IsPublic:true,
-      MaxPlayers:10
+      MaxPlayers:10,
+      SceneName:"Default"
     }
     
     let message2 = 
@@ -240,13 +248,105 @@ if(TESTMODE)
       await HandleMessage(null,JSON.stringify(message));
   }
   Tester3();
+
+  const Tester4 = async ( message) =>
+  {
+    
+    await new Promise(resolve => setTimeout(resolve, 7000));
+    Content = {
+      PrefabName:'FabA',
+      Position:'0:0:0',
+      Rotation:'0:0:0',
+      Scale:'1:1:1',
+      Owner:null
+    }
+    
+    message = 
+        {
+          Type: messageTypes.UNITYOBJECT,
+          Content : JSON.stringify(Content),
+          Timestamp: Date.now(),
+          UserID : Object.keys(usersMan.Users)[1]
+        };
+      HandleMessage(null,JSON.stringify(message));
+      
+      await new Promise(resolve => setTimeout(resolve, 1));
+    
+    message = 
+        {
+          Type: messageTypes.UNITYOBJECT,
+          Content : JSON.stringify(Content),
+          Timestamp: Date.now(),
+          UserID : Object.keys(usersMan.Users)[1]
+        };
+    
+    HandleMessage(null,JSON.stringify(message));
+    
+  }
+
+
+  Tester4();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   //leave room
 
-/*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   const Tester2 = async ( message) =>
   {
     
-    await new Promise(resolve => setTimeout(resolve, 6000));
+    await new Promise(resolve => setTimeout(resolve, 7000));
     Content = {
       RoomName:'Room1' 
     }
@@ -256,28 +356,35 @@ if(TESTMODE)
           Type: messageTypes.LEAVEROOM,
           Content : JSON.stringify(Content),
           Timestamp: Date.now(),
-          UserID : Object.keys(usersMan.Users)[0]
+          UserID : Object.keys(usersMan.Users)[1]
         };
-      await HandleMessage(null,JSON.stringify(message));
+      HandleMessage(null,JSON.stringify(message));
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1));
     
     message = 
         {
           Type: messageTypes.LEAVEROOM,
           Content : JSON.stringify(Content),
           Timestamp: Date.now(),
-          UserID : Object.keys(usersMan.Users)[1]
+          UserID : Object.keys(usersMan.Users)[0]
         };
     
-    await HandleMessage(null,JSON.stringify(message));
+    HandleMessage(null,JSON.stringify(message));
     
   }
 
 
 
-  Tester2((message));
 
 
-  */
+
+
+
+
+
+  //Tester2((message));
+
+
+  
 }
