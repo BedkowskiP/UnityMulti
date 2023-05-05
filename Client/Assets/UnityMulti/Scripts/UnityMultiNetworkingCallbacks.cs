@@ -16,20 +16,24 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
     private void Awake()
     {
         multiNetworking = UnityMultiNetworking.Instance;
-        multiNetworking.CustomMessage += OnCustomMessage;
-        multiNetworking.ClientError += OnClientError;
-        multiNetworking.ClientConnectedAndReady += OnClientConnected;
-        multiNetworking.ClientDisconnected += OnClientDisconnected;
-        multiNetworking.ConnectionStateChange += OnConnectionStateChange;
-        multiNetworking.InitialConnection += OnInitialConnection;
-        multiNetworking.ValidationError += OnValidationError;
-        multiNetworking.CreateRoomFailed += OnCreateRoomFailed;
+        multiNetworking.CustomMessageEvent += OnCustomMessage;
+        multiNetworking.ClientErrorEvent += OnClientError;
+        multiNetworking.ClientConnectedAndReadyEvent += OnClientConnected;
+        multiNetworking.ClientDisconnectedEvent += OnClientDisconnected;
+        multiNetworking.ConnectionStateChangeEvent += OnConnectionStateChange;
+        multiNetworking.InitialConnectionEvent += OnInitialConnection;
+        multiNetworking.MultiErrorEvent += OnValidationError;
+        multiNetworking.CreateRoomEvent += OnCreateRoom;
+        multiNetworking.JoinRoomEvent += OnJoinRoom;
+        multiNetworking.LeaveRoomEvent += OnLeaveRoom;
+        multiNetworking.ClientJoinEvent += OnClientJoin;
+        multiNetworking.ClientLeaveEvent += OnClientLeave;
     }
 
     public virtual void OnClientError(ErrorEventArgs error)
     {
         Debug.LogError(
-            "Error Exception: " + error.Exception + 
+            "Error Exception: " + error.Exception +
             "\nError Message: " + error.Message
             );
     }
@@ -59,13 +63,30 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
         Debug.Log("Validating user data");
     }
 
-    public virtual void OnValidationError(UnityMultiValidationHelper.ErrorCode errorCode, string ErrorMessage)
+    public virtual void OnValidationError(ErrorCode errorCode)
     {
-        Debug.Log("Validation error: \nErrorCode: " + errorCode + "\nErrorMessage: " + ErrorMessage);
+        Debug.Log("Server error: ErrorCode: " + errorCode + " | ErrorMessage: " + UnityMultiErrorHandler.ErrorMessage(errorCode));
     }
 
-    public virtual void OnCreateRoomFailed(string error)
+    public virtual void OnCreateRoom(string roomName)
     {
-        Debug.Log(error);
+        Debug.Log("Room: '" + roomName + "' created succesfully.");
+    }
+    public virtual void OnJoinRoom(string roomName)
+    {
+        Debug.Log("Joined room '" + roomName + "' succesfully.");
+    }
+
+    public virtual void OnLeaveRoom(string roomName)
+    {
+        Debug.Log("You left room '" + roomName + "' succesfully");
+    }
+    public virtual void OnClientJoin(UnityMultiUser user)
+    {
+        Debug.Log("User: " + user.Username + " joined the room");
+    }
+    public virtual void OnClientLeave(UnityMultiUser user)
+    {
+        Debug.Log("User: " + user.Username + " left the room");
     }
 }

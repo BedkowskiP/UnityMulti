@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,10 +10,19 @@ public class MessageType
     /// </summary>
     public const string PING = "ping";
     public const string PONG = "pong";
-    ///
+    /// <summary>
     /// 
-    /// 
+    /// </summary>
     public const string CREATE_ROOM = "createRoom";
+    public const string JOIN_ROOM = "joinRoom";
+    public const string CREATE_ROOM_RESPONSE = "responseCreateRoom";
+    public const string JOIN_ROOM_RESPONSE = "responseJoinRoom";
+    public const string USER_JOIN = "userJoin";
+    public const string USER_LEAVE = "userLeave";
+    public const string LEAVE_ROOM = "leaveRoom";
+    public const string LEAVE_ROOM_RESPONSE = "responseLeaveRoom";
+    public const string HOST_CHANGE = "hostChange";
+    public const string HOST_CHANGE_RESPONSE = "responseHostChange";
     /// <summary>
     /// these message types could be used to establisz connection between client and server.
     /// </summary>
@@ -56,35 +66,42 @@ public interface IMessage
     public string Type { get; set; }
     public string Content { get; set; }
     public long? Timestamp { get; set; }
+    public ErrorCode ErrorCode { get; set; }
+    public string UserID { get; set; }
 }
 
 public class Message : IMessage
 {
+    private string vALIDATION_REQUEST;
+    private string v1;
+    private long v2;
+
     public string Type { get; set; }
     public string Content { get; set; }
     public long? Timestamp { get; set; } = null;
+    public ErrorCode ErrorCode { get; set; } = 0;
+    public string UserID { get; set; }
 
-    public Message(string type, string content, long timestamp)
+    [JsonConstructor]
+    public Message(string type, string content, long timestamp, ErrorCode errorCode)
     {
         this.Type = type;
         this.Content = content;
         this.Timestamp = timestamp;
+        this.ErrorCode = errorCode;
+    }
+
+
+    public Message(string type, string content, long timestamp, string UserID)
+    {
+        this.Type = type;
+        this.Content = content;
+        this.Timestamp = timestamp;
+        this.UserID = UserID;
     }
     public Message(string type, string content)
     {
         this.Type = type;
         this.Content = content;
     }
-
-    public Message(string type)
-    {
-        this.Type = type;
-    }
-
-    public Message()
-    {
-
-    }
-
-    
 }

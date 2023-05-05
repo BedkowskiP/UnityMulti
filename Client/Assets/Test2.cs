@@ -10,25 +10,23 @@ public class Test2 : UnityMultiNetworkingCallbacks
     void Start()
     {
         multiNetworking.Connect(url, "betek");
-        settings = new UnityMultiRoomSettings("RoomName");
-        multiNetworking.CreateRoom(settings);
+        settings = new UnityMultiRoomSettings("RoomNames", "TurorialSceneTwo");
     }
 
-    // Update is called once per frame
     void Update()
     {
-        //this.ms = multiNetworking.GetLatency();
+        this.ms = multiNetworking.GetLatency();
     }
 
     public override void OnClientConnected()
     {
-        base.OnClientConnected();
-
-        settings = new UnityMultiRoomSettings("RoomName");
-        
-        Debug.Log(multiNetworking.clientData.Username);
-        Debug.Log(multiNetworking.clientData.UserID);
+        base.OnClientConnected();        
         multiNetworking.CreateRoom(settings);
     }
 
+    public override void OnCreateRoom(string roomName)
+    {
+        base.OnCreateRoom(roomName);
+        multiNetworking.JoinRoom(settings);
+    }
 }
