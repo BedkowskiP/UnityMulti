@@ -7,7 +7,6 @@ const CreateMsg =  async (type,cont,err,log) =>
         ErrorCode : err, 
         Timestamp: Date.now()
     }
-
     if(log)console.log("msg from server: ",result)
     return result
 }
