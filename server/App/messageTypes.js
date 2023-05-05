@@ -14,7 +14,7 @@
   const USERJOIN = "userJoin";
   const USERLEAVE = "userLeave";
   const UNITYOBJECT ="addUnityObject"
-  const UNITYOBJECTRES ="responeAddUnityObject"
+  const UNITYOBJECTRES ="responseAddUnityObject"
 /// <summary>
 /// these messages are used check latency.
 /// </summary>

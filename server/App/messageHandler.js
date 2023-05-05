@@ -4,7 +4,7 @@ const usersMan = require('./usersManager')
 const roomsMan = require('./roomsManager')
 const MSG = require('./message')
 
-const DEBUGMODE = false;  //shows outcoming msgs                           
+const DEBUGMODE = true;  //shows outcoming msgs                           
 
 
 
