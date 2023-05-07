@@ -1,4 +1,4 @@
-const CreateMsg =  async (type,cont,err,log) =>
+const CreateMsg =  (type,cont,err,log) =>
 {
     let result = 
     {

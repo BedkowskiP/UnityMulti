@@ -28,5 +28,12 @@
     - Prob change Array to HashMap
 
 - Change Rooms[roomName] access
-- Create Object class
-- Add ChangeSceneMsg
+- cahnge unityobject function broacdcast inside exception outside
+
+
+1.5.08
+
++ Added Some ErrorCodes
++ Updated Graph https://app.diagrams.net/#G1is5-DjVXsUrZb5-UX4Bqe01X9VJEw_0H
++ Added SceneCHange msg and response
++ Fixed Small stuff

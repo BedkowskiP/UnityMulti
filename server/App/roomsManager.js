@@ -9,13 +9,12 @@ const BroadcastMsgToUsersInRoom = async (RoomName,msg,except,Users) =>
     const users = {...Rooms[RoomName].users};//hollow copy to prevent async errors
     for (const key in users) {
         const ID = users[key].UserID;
-        if(ID!=except)Users[ID]?.socket?.send(msg);
+        if(ID!=except){usersMan.Users[ID]?.socket?.send(msg);console.log(msg,'sent to',usersMan.Users[ID].id);}
     }
 }
 const AddRoom = async (content,UserID) =>
 {
     const room = new Room(content.RoomName,UserID,content.Password,content.IsPublic,content.MaxPlayers,content.SceneName)
-    //console.log(room);
     Rooms[room.name]=room;
 }
 const AddUserToRoom = async (RoomName,userID,username) =>
@@ -47,9 +46,18 @@ const GetUserRoomname =  async  (userID) =>
     else return UserInRoom[userID]
 }
 
-const DeleteRoom = async (RoomName) =>
+const DeleteRoom = async (RoomName,ERR) =>
 {
+    if(Rooms[RoomName].users.length!=0)
+    {
+       await OnDeletRoom(RoomName,ERR)
+    } 
     delete Rooms[RoomName]
+}
+const OnDeletRoom =async (RoomName,ERR)=>
+{
+    const msg = JSON.stringify((MSG.CreateMsg("responseHostChange",{},ERR,false)))
+    BroadcastMsgToUsersInRoom(RoomName,msg,null,usersMan.Users)
 }
 const ChooseNewHost = async (RoomName) =>
 {
@@ -59,8 +67,7 @@ const ChooseNewHost = async (RoomName) =>
     }
     catch
     {
-        console.log('\x1b[35m%s\x1b[0m','COULDNT CHOOSE NEW HOST FOR ROOM REMOVING ROOM',RoomName);
-        await DeleteRoom(RoomName)
+        await DeleteRoom(RoomName,204)//204 deleting room coudlnt choose new host
     }
     
 }
@@ -111,26 +118,50 @@ class Room
         this._host=ID
         
     }   
-    set sceneName(SCENENAME){this._sceneName=SCENENAME}
+    //set sceneName(SCENENAME){this._sceneName=SCENENAME}
     ///
     /// OBJECTLIST
     ///
     GetObjectList(){}
     GetObjectFromList(){return this._objectList}
-    AddObject(USERID,CONTENT)
+    AddObject(CONTENT)
     {
         let OBJECT=new ObjectUnity(CONTENT.PrefabName,CONTENT.Owner,CONTENT.Position,CONTENT.Rotation,CONTENT.Scale);
         this._objectList[this._objectNum++]=OBJECT
+        if(false){}//problem
+        else {
+            return {ErrorCode:0,ObjectID:this._objectNum-1};}
     }
 
-    onHostChange(NewHost)
+    onHostChange(NEWHOST)
     {
-        console.log("changing host from : ",this.host,"->", NewHost)
+        console.log("changing host from : ",this.host,"->", NEWHOST)
         const jsonContent =
         {
-            UserID : NewHost
+            UserID : NEWHOST
         }
         const msg = JSON.stringify((MSG.CreateMsg("responseHostChange",jsonContent,0,false)))
+        BroadcastMsgToUsersInRoom(this._name,msg,null,usersMan.Users)
+    }
+    
+    SetSceneName(SCENE,USERID)
+    {
+        if(USERID==this._host)
+        {
+            this._SceneName=SCENE
+            this.onSceneChange(SCENE);
+            return 0;
+        }
+        else{return 207}//Didnt change scene beacuse no HOST privilage 
+    }
+    onSceneChange(SCENE)
+    {
+        ///REMOVE ALL THE OBJECTS
+        const jsonContent =
+        {
+            SceneName : SCENE
+        }
+        const msg = JSON.stringify((MSG.CreateMsg("responseSceneChange",jsonContent,0,false)))
         BroadcastMsgToUsersInRoom(this._name,msg,null,usersMan.Users)
     }
     
@@ -146,7 +177,7 @@ class ObjectUnity
         this._transformSca = SCA;
         this._Owner=OWNER;
         this._Prefab = PREFAB;
-        console.log("added Unity Object",this);
+        //console.log("added Unity Object",this);
     }
     
 }

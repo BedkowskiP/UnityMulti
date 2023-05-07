@@ -6,13 +6,13 @@ const roomsMan = require('./App/roomsManager');
 const usersMan = require('./App/usersManager');
 
 const DEBUGMODE= true;   //shows incoming msgs
-const TESTMODE = false;   //generate local users
+const TESTMODE = true;   //generate local users
 const server = new WebSocket.Server({
   host: 'localhost',
   port: 8080
 });
 
-
+debugger
 const db = new DB.database(
   "localhost",
   "root",
@@ -88,7 +88,7 @@ const HandleMessage = async (socket, message) => {
                 await msghand.HandleValidation(socket,serverMessage);
                 break;
             case messageTypes.PING:
-                await msghand.HandlePing(socket,serverMessage);//test later
+                msghand.HandlePing(socket,serverMessage);//test later
                 break;
             case messageTypes.CREATEROOM:
                 await msghand.HandleCreateRoom(socket,serverMessage);
@@ -105,8 +105,8 @@ const HandleMessage = async (socket, message) => {
             case messageTypes.UNITYOBJECT:
                 await msghand.HandleObjectUnity(socket,serverMessage);
                 break;                
-            case messageTypes.DISCONNECT:
-                // handle disconnect message
+            case messageTypes.SCENECHANGE:
+                await msghand.HandleSceneChange(socket,serverMessage);
                 break;
             case messageTypes.USER_DATA_REQUEST:
                 // handle user data request message
@@ -291,7 +291,48 @@ if(TESTMODE)
 
 
 
+  const Tester5 = async ( message) =>
+  {
+    
+    await new Promise(resolve => setTimeout(resolve, 8000));
+    Content = {
+      SceneName:'Scene2' 
+    }
+    
+    message = 
+        {
+          Type: messageTypes.SCENECHANGE,
+          Content : JSON.stringify(Content),
+          Timestamp: Date.now(),
+          UserID : Object.keys(usersMan.Users)[1]
+        };
+      HandleMessage(null,JSON.stringify(message));
+      await new Promise(resolve => setTimeout(resolve, 500));
+    Content = {
+      SceneName:'Scene3' 
+    }
+    
+    message = 
+        {
+          Type: messageTypes.SCENECHANGE,
+          Content : JSON.stringify(Content),
+          Timestamp: Date.now(),
+          UserID : Object.keys(usersMan.Users)[0]
+        };
+      HandleMessage(null,JSON.stringify(message));
+    
+  }
 
+
+
+
+
+
+
+
+
+
+  Tester5((message));
 
 
 
