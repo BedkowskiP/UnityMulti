@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class UnityMultiRoomSettings
 {
@@ -34,17 +34,18 @@ public class UnityMultiRoomSettings
         this.IsPublic = false;
     }
     [JsonConstructor]
-    public UnityMultiRoomSettings(string RoomName, string HostID, int MaxPlayers, bool IsPublic)
+    public UnityMultiRoomSettings(string RoomName, string HostID, int MaxPlayers, bool IsPublic, string SceneName)
     {
         this.RoomName = RoomName;
         this.HostID = HostID;
         this.MaxPlayers = MaxPlayers;
         this.IsPublic = IsPublic;
+        this.SceneName = SceneName;
     }
 
-    public void SetHost(string host)
+    public void SetHost(string HostID)
     {
-
+        this.HostID = HostID;
     }
 }
 
@@ -87,8 +88,127 @@ public class UnityMultiRoom : MonoBehaviour
         this.Settings = settings;
     }
 
-    public void SetNewHost(string host)
+    public void SetNewHost(string HostID)
     {
-        Settings.SetHost(host);
+        Settings.SetHost(HostID);
+    }
+
+    public void CreateRoom(UnityMultiRoomSettings settings)
+    {
+        if (!multiNetworking.isValidated)
+        {
+            multiNetworking.InvokeErrorCodes(ErrorCode.NotValidated);
+        }
+        else
+        {
+            Message roomSettings = new Message(MessageType.CREATE_ROOM, JsonConvert.SerializeObject(settings));
+            multiNetworking.SendMessage(roomSettings);
+        }
+    }
+
+    public void JoinRoom(UnityMultiRoomSettings settings)
+    {
+        if (!multiNetworking.isValidated)
+        {
+            multiNetworking.InvokeErrorCodes(ErrorCode.NotValidated);
+        }
+        else
+        {
+            Message roomSettings = new Message(MessageType.JOIN_ROOM, JsonConvert.SerializeObject(settings));
+            multiNetworking.SendMessage(roomSettings);
+        }
+    }
+
+    public void LeaveRoom()
+    {
+        if (!multiNetworking.isInRoom)
+        {
+            multiNetworking.InvokeErrorCodes(ErrorCode.NotInRoom);
+        }
+        else
+        {
+            Message leaveMessage = new Message(MessageType.LEAVE_ROOM, JsonConvert.SerializeObject(multiNetworking.room.Settings));
+            multiNetworking.SendMessage(leaveMessage);
+        }
+    }
+
+    public void ChangeHost(UnityMultiUser user)
+    {
+        Message newHost = new Message(MessageType.HOST_CHANGE, JsonConvert.SerializeObject(user.UserID));
+        multiNetworking.SendMessage(newHost);
+    }
+
+    public void ChangeHost()
+    {
+        Message newHost = new Message(MessageType.HOST_CHANGE, "{\"UserID\": \"\"}");
+        multiNetworking.SendMessage(newHost);
+    }
+
+    public void HandleCreateRoom(Message serverMessage)
+    {
+        if (serverMessage.ErrorCode != ErrorCode.None)
+        {
+            multiNetworking.InvokeErrorCodes(serverMessage.ErrorCode);
+        }
+        else
+        {
+            UnityMultiRoomSettings roomSettings = JsonConvert.DeserializeObject<UnityMultiRoomSettings>(serverMessage.Content);
+            multiNetworking.InvokeRoomE("createRoom", roomSettings.RoomName);
+        }
+    }
+
+    public void HandleJoinRoom(Message serverMessage)
+    {
+        if (serverMessage.ErrorCode != ErrorCode.None)
+        {
+            Debug.Log(serverMessage.ErrorCode);
+            multiNetworking.InvokeErrorCodes(serverMessage.ErrorCode);
+        }
+        else
+        {
+            if (multiNetworking.isInRoom)
+            {
+                multiNetworking.InvokeErrorCodes(ErrorCode.AlreadyInRoom);
+            }
+            else
+            {
+                multiNetworking.SetInRoom(true);
+                UnityMultiRoom placeholder = JsonConvert.DeserializeObject<UnityMultiRoom>(serverMessage.Content);
+                Debug.Log("Placeholder sceneName: "+placeholder.Settings.SceneName);
+                SetSettings(placeholder.Settings);
+                Debug.Log("I'm here: "+Settings.SceneName);
+                if (Settings.SceneName != "" && Settings.SceneName != null)
+                {
+                    Debug.Log("Do i get here");
+                    SceneManager.LoadScene("UnityMulti/Examples/TutorialScenes/"+Settings.SceneName);
+                }
+                multiNetworking.InvokeRoomE("joinRoom", multiNetworking.room.Settings.RoomName);
+                foreach (var user in placeholder.UserList)
+                {
+                    AddUser(user);
+                }
+            }
+        }
+    }
+    public void HandleLeaveRoom()
+    {
+        multiNetworking.SetInRoom(false);
+        multiNetworking.InvokeRoomE("leaveRoom", multiNetworking.room.Settings.RoomName);
+    }
+
+    public void HandleUserLeave(Message serverMessage)
+    {
+        UnityMultiUser placeholder = JsonConvert.DeserializeObject<UnityMultiUser>(serverMessage.Content);
+        RemoveUser(placeholder);
+    }
+    public void HandleUserJoin(Message serverMessage)
+    {
+        UnityMultiUser placeholder = JsonConvert.DeserializeObject<UnityMultiUser>(serverMessage.Content);
+        AddUser(placeholder);
+    }
+    public void HandleHostChange(Message serverMessage)
+    {
+        UnityMultiUser placeholder = JsonConvert.DeserializeObject<UnityMultiUser>(serverMessage.Content);
+        SetNewHost(placeholder.UserID);
     }
 }

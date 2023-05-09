@@ -21,12 +21,12 @@ public class Test2 : UnityMultiNetworkingCallbacks
     public override void OnClientConnected()
     {
         base.OnClientConnected();        
-        multiNetworking.CreateRoom(settings);
+        multiNetworking.room.CreateRoom(settings);
     }
 
     public override void OnCreateRoom(string roomName)
     {
         base.OnCreateRoom(roomName);
-        multiNetworking.JoinRoom(settings);
+        multiNetworking.room.JoinRoom(settings);
     }
 }

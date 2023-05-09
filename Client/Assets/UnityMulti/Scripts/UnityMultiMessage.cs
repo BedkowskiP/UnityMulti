@@ -61,16 +61,7 @@ public class MessageType
     public static List<string> CUSTOM { get; set; }
 }
 
-public interface IMessage
-{
-    public string Type { get; set; }
-    public string Content { get; set; }
-    public long? Timestamp { get; set; }
-    public ErrorCode ErrorCode { get; set; }
-    public string UserID { get; set; }
-}
-
-public class Message : IMessage
+public class Message
 {
     private string vALIDATION_REQUEST;
     private string v1;
