@@ -57,7 +57,8 @@ class User
         this._id=id,//ID to differentiate users
         this._name=null,//username to represent users on client side
         this._valid=null,//validated guest vs verifed user
-        this._socket=socket//reference to socket
+        this._socket=socket,//reference to socket
+        this._isAlive=null
     } 
     get id() {return this._id;}
     get name() {return this._name;}
