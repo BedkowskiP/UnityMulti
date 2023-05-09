@@ -58,7 +58,7 @@ public abstract class BaseSingleton<TSingleton> : MonoBehaviour
                 // otherwise create one.
                 var singleton = new GameObject("UnityMulti").AddComponent<TSingleton>();
                 _instance = singleton.GetComponent<TSingleton>();
-                Debug.Log($"Singleton of type: {nameof(TSingleton)} was created on the fly.");
+                //Debug.Log($"Singleton of type: {nameof(TSingleton)} was created on the fly.");
             }
 
             // initialize singleton if it hasn't been initialized.

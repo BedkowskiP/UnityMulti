@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class UnityMultiUser
 {
-    public string Username { get; set; } = "";
+    public string Username { get; private set; } = "";
     public string UserID { get; private set; } = "";
 
     public void SetUserId(string userId)

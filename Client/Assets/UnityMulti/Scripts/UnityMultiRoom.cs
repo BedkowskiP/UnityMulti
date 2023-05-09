@@ -1,5 +1,7 @@
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -12,27 +14,25 @@ public class UnityMultiRoomSettings
     public string HostID { get; private set; }
     public string SceneName { get; private set; } = "";
 
-    public UnityMultiRoomSettings(string RoomName)
+    public UnityMultiRoomSettings(string RoomName, string Password, string SceneName)
     {
         this.RoomName = RoomName;
-    }
-    public UnityMultiRoomSettings(string RoomName, int MaxPlayers)
-    {
-        this.RoomName = RoomName;
-        this.MaxPlayers = MaxPlayers;
-    }
-    public UnityMultiRoomSettings(string RoomName, string SceneName)
-    {
-        this.RoomName = RoomName;
+        if (Password != "")
+            IsPublic = false;
+        this.Password = Password;
         this.SceneName = SceneName;
     }
-    public UnityMultiRoomSettings(string RoomName, string Password, int MaxPlayers)
+
+    public UnityMultiRoomSettings(string RoomName, string Password, int MaxPlayers, string SceneName)
     {
         this.RoomName = RoomName;
+        if (Password != "")
+            IsPublic = false;
         this.Password = Password;
         this.MaxPlayers = MaxPlayers;
-        this.IsPublic = false;
+        this.SceneName = SceneName;
     }
+
     [JsonConstructor]
     public UnityMultiRoomSettings(string RoomName, string HostID, int MaxPlayers, bool IsPublic, string SceneName)
     {
@@ -47,19 +47,26 @@ public class UnityMultiRoomSettings
     {
         this.HostID = HostID;
     }
+
+    public string GetSceneName()
+    {
+        return SceneName;
+    }
 }
 
 public class UnityMultiRoom : MonoBehaviour
 {
+    private UnityMultiNetworking multiNetworking;
     public UnityMultiRoomSettings Settings { get; private set; }
     public List<UnityMultiUser> UserList { get; private set; } = new List<UnityMultiUser>();
     private List<GameObject> roomObjectList = new List<GameObject>();
     private Dictionary<string, GameObject> clientObjectDict = new Dictionary<string, GameObject>();
-    private UnityMultiNetworking multiNetworking;
+    public bool isSceneLoaded { get; private set; } = false;
 
     [JsonConstructor]
     public UnityMultiRoom(UnityMultiRoomSettings Settings, List<UnityMultiUser> UserList)
     {
+        
         this.Settings = Settings;
         this.UserList = UserList;
     }
@@ -98,6 +105,7 @@ public class UnityMultiRoom : MonoBehaviour
         if (!multiNetworking.isValidated)
         {
             multiNetworking.InvokeErrorCodes(ErrorCode.NotValidated);
+            return;
         }
         else
         {
@@ -111,6 +119,7 @@ public class UnityMultiRoom : MonoBehaviour
         if (!multiNetworking.isValidated)
         {
             multiNetworking.InvokeErrorCodes(ErrorCode.NotValidated);
+            return;
         }
         else
         {
@@ -124,6 +133,7 @@ public class UnityMultiRoom : MonoBehaviour
         if (!multiNetworking.isInRoom)
         {
             multiNetworking.InvokeErrorCodes(ErrorCode.NotInRoom);
+            return;
         }
         else
         {
@@ -149,6 +159,7 @@ public class UnityMultiRoom : MonoBehaviour
         if (serverMessage.ErrorCode != ErrorCode.None)
         {
             multiNetworking.InvokeErrorCodes(serverMessage.ErrorCode);
+            return;
         }
         else
         {
@@ -157,12 +168,13 @@ public class UnityMultiRoom : MonoBehaviour
         }
     }
 
-    public void HandleJoinRoom(Message serverMessage)
+    public async Task HandleJoinRoom(Message serverMessage)
     {
         if (serverMessage.ErrorCode != ErrorCode.None)
         {
             Debug.Log(serverMessage.ErrorCode);
             multiNetworking.InvokeErrorCodes(serverMessage.ErrorCode);
+            return;
         }
         else
         {
@@ -174,26 +186,41 @@ public class UnityMultiRoom : MonoBehaviour
             {
                 multiNetworking.SetInRoom(true);
                 UnityMultiRoom placeholder = JsonConvert.DeserializeObject<UnityMultiRoom>(serverMessage.Content);
-                Debug.Log("Placeholder sceneName: "+placeholder.Settings.SceneName);
                 SetSettings(placeholder.Settings);
-                Debug.Log("I'm here: "+Settings.SceneName);
                 if (Settings.SceneName != "" && Settings.SceneName != null)
                 {
-                    Debug.Log("Do i get here");
-                    SceneManager.LoadScene("UnityMulti/Examples/TutorialScenes/"+Settings.SceneName);
-                }
-                multiNetworking.InvokeRoomE("joinRoom", multiNetworking.room.Settings.RoomName);
-                foreach (var user in placeholder.UserList)
-                {
-                    AddUser(user);
-                }
+                    try
+                    {
+                        isSceneLoaded = false;
+                        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(Settings.SceneName);
+                        while (!asyncLoad.isDone)
+                        {
+                            await Task.Yield();
+                        }
+                        isSceneLoaded = true;      
+                    } catch (Exception e)
+                    {
+                        Debug.Log(e);
+                        Debug.Log("Unable to load scene: " + Settings.SceneName + "; Make sure the scene name is correct.");
+                        LeaveRoom();
+                        return;
+                    }
+                    if (isSceneLoaded)
+                    {
+                        multiNetworking.InvokeRoomE("joinRoom", Settings.SceneName);
+                        foreach (var user in placeholder.UserList)
+                        {
+                            AddUser(user);
+                        }
+                    }
+                } else { Debug.Log("SceneName is null or equal to \"\". Auto scene load function stopped."); return; }
             }
         }
     }
     public void HandleLeaveRoom()
     {
         multiNetworking.SetInRoom(false);
-        multiNetworking.InvokeRoomE("leaveRoom", multiNetworking.room.Settings.RoomName);
+        multiNetworking.InvokeRoomE("leaveRoom", Settings.RoomName);
     }
 
     public void HandleUserLeave(Message serverMessage)
