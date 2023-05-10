@@ -421,8 +421,14 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             return;
         }
 
-        UnityMultiObjectToInstantiate temp = new UnityMultiObjectToInstantiate(prefabName, position, rotation, scale);
-        Message objectMessage = new Message(MessageType.ADD_UNITY_OBJECT, JsonConvert.SerializeObject(temp));
+        try
+        {
+            UnityMultiObjectInfo temp = new UnityMultiObjectInfo(prefabName, position, rotation, scale);
+            Message objectMessage = new Message(MessageType.ADD_UNITY_OBJECT, JsonConvert.SerializeObject(temp));
+        } catch (Exception e)
+        {
+            Debug.LogError(e);
+        }
+        
     }
 }
-
