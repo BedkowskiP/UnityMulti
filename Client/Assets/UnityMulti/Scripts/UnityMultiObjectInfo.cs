@@ -9,18 +9,18 @@ public class UnityMultiObjectInfo
     [HideInInspector]
     public string prefabName { get; private set; }
 
-    public float posX { get; set; }
-    public float posY { get; set; }
-    public float posZ { get; set; }
+    private float posX { get; set; }
+    private float posY { get; set; }
+    private float posZ { get; set; }
 
-    public float rotX { get; set; }
-    public float rotY { get; set; }
-    public float rotZ { get; set; }
-    public float rotW { get; set; }
+    private float rotX { get; set; }
+    private float rotY { get; set; }
+    private float rotZ { get; set; }
+    private float rotW { get; set; }
 
-    public float scalX { get; set; }
-    public float scalY { get; set; }
-    public float scalZ { get; set; }
+    private float scalX { get; set; }
+    private float scalY { get; set; }
+    private float scalZ { get; set; }
     public UnityMultiObjectInfo(string prefabName, Vector3 position, Quaternion rotation, Vector3 scale)
     {
         this.prefabName = prefabName;

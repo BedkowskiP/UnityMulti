@@ -5,15 +5,7 @@ using UnityEngine.SceneManagement;
 
 public class UnityMultiSceneLoader : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+    private List<string> ListOfScenes = new List<string>();
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+
 }
