@@ -37,7 +37,6 @@
   </PropertyGroup>
   <ItemGroup>
      <Compile Include="Assets\UnityMulti\Scripts\BaseSingleton.cs" />
-<<<<<<< Updated upstream
      <Compile Include="Assets\UnityMulti\Scripts\Interfaces\IDisposable.cs" />
      <Compile Include="Assets\UnityMulti\Libraries\UnityMainThreadDispatcher\UnityMainThreadDispatcher.cs" />
      <Compile Include="Assets\UnityMulti\Scripts\UnityMultiRoom.cs" />
@@ -47,21 +46,7 @@
      <Compile Include="Assets\UnityMulti\Scripts\Interfaces\IMessage.cs" />
      <Compile Include="Assets\UnityMulti\Scripts\UnityMultiErrorHandler.cs" />
      <Compile Include="Assets\UnityMulti\Scripts\UnityMultiNetworkingCallbacks.cs" />
-=======
-     <Compile Include="Assets\UnityMulti\Scripts\IDisposable.cs" />
-     <Compile Include="Assets\UnityMulti\Libraries\UnityMainThreadDispatcher\UnityMainThreadDispatcher.cs" />
-     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiRoom.cs" />
-     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiNetworking.cs" />
-     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiUser.cs" />
-     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiMessage.cs" />
-     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiErrorHandler.cs" />
-     <Compile Include="Assets\UnityMulti\Example\Test.cs" />
-     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiNetworkingCallbacks.cs" />
-     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiObject.cs" />
      <Compile Include="Assets\UnityMulti\Scripts\UnityMultiObjectInfo.cs" />
-     <Compile Include="Assets\UnityMulti\Example\CreateConnection.cs" />
-     <Compile Include="Assets\UnityMulti\Example\CreateObjectOnNewScene.cs" />
->>>>>>> Stashed changes
      <Compile Include="Assets\UnityMulti\Scripts\UnityMultiSceneLoader.cs" />
      <Compile Include="Assets\UnityMulti\Scripts\UnityMultiValidationHelper.cs" />
     <Reference Include="UnityEngine">
