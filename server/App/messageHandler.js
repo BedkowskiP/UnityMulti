@@ -141,10 +141,16 @@ const HandleObjectUnity = async (socket,jsonmsg) =>
     let jsonContent =
     {
         PrefabName:content.PrefabName,
+<<<<<<< Updated upstream
         ObjectID:reuslt.ObjectID,
         Position:content.Position,
         Rotation:content.Rotation,
         Scale:content.Scale,
+=======
+        PosX:content.PosX,PosY:content.PosY,PosZ:content.PosZ,
+        RotX:content.RotX,RotY:content.RoT,RotZ:content.RoZ,RotW:content.RotW,
+        ScalX:content.ScalX,ScalY:content.ScalY,ScalZ:content.ScalZ,
+>>>>>>> Stashed changes
         Owner:content.Owner
     };
     let msg = JSON.stringify((MSG.CreateMsg(messageTypes.UNITYOBJECTRES,jsonContent,isErrorCode,1)))
