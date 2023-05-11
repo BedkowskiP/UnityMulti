@@ -119,19 +119,7 @@ class Room
         
     }   
     //set sceneName(SCENENAME){this._sceneName=SCENENAME}
-    ///
-    /// OBJECTLIST
-    ///
-    GetObjectList(){}
-    GetObjectFromList(){return this._objectList}
-    AddObject(CONTENT)
-    {
-        let OBJECT=new ObjectUnity(CONTENT.PrefabName,CONTENT.Owner,CONTENT.Position,CONTENT.Rotation,CONTENT.Scale);
-        this._objectList[this._objectNum++]=OBJECT
-        if(false){}//problem
-        else {
-            return {ErrorCode:0,ObjectID:this._objectNum-1};}
-    }
+    
 
     onHostChange(NEWHOST)
     {
@@ -164,21 +152,85 @@ class Room
         const msg = JSON.stringify((MSG.CreateMsg("responseSceneChange",jsonContent,0,false)))
         BroadcastMsgToUsersInRoom(this._name,msg,null,usersMan.Users)
     }
-    
+    ///
+    /// OBJECTLIST
+    ///
+    GetObjectList(){}
+    GetObjectFromList(){return this._objectList}
+    AddObject(CONTENT,OWNER)
+    {
+        let OBJECT=new ObjectUnity
+        (
+            CONTENT.PrefabName,OWNER,
+            CONTENT.PosX,CONTENT.PosY,CONTENT.PosZ,
+            CONTENT.RotX,CONTENT.RotY,CONTENT.RotZ,CONTENT.RotW,
+            CONTENT.ScalX,CONTENT.ScalY,CONTENT.ScalZ
+        );
+        this._objectList[this._objectNum++]=OBJECT
+        console.log("Added",OBJECT)
+        if(false){}//problem
+        else {
+            return {ErrorCode:0,ObjectID:this._objectNum-1};}
+    }
 }
 
 class ObjectUnity
 {
-   
-    constructor(PREFAB,OWNER,POS,ROT,SCA)
+    static PositionUnity = class
     {
-        this._transformPos = POS;
-        this._transformRot = ROT;
-        this._transformSca = SCA;
-        this._Owner=OWNER;
-        this._Prefab = PREFAB;
-        //console.log("added Unity Object",this);
+        constructor(X,Y,Z)
+        {
+            this.x=X
+            this.y=Y
+            this.z=Z
+        }
+
+        
     }
+    static RotationUnity = class
+    {
+        constructor(X,Y,Z,W)
+        {
+            this.x=X
+            this.y=Y
+            this.z=Z
+            this.z=W
+        }
+    }
+    static ScaleUnity = class
+    {
+        constructor(X,Y,Z)
+        {
+            this.x=X
+            this.y=Y
+            this.z=Z
+        }
+        
+    }
+    constructor(PREFAB,OWNER,POSX,POSY,POSZ,ROTX,ROTY,ROTZ,ROTW,SCAX,SCAY,SCAZ)
+    {
+        this._pos=new ObjectUnity.PositionUnity(POSX,POSY,POSZ)
+        this._rot=new ObjectUnity.RotationUnity(ROTX,ROTY,ROTZ,ROTW)
+        this._sca=new ObjectUnity.ScaleUnity(SCAX,SCAY,SCAZ)
+        this._owner=OWNER;
+        this._prefab = PREFAB;
+    }
+    get pos()
+    {
+        return {x:this._pos.x,  y:this._pos.y,  z:this._pos.z}
+    }
+    get rot()
+    {
+        return {x:this._rot.x,  y:this._rot.y,  z:this._rot.z,  w:this._rot.w}
+    }
+    get sca()
+    {
+        return {x:this._sca.x,  y:this._sca.y,  z:this._sca.z}
+    }
+
+    
+    
+    
     
 }
 

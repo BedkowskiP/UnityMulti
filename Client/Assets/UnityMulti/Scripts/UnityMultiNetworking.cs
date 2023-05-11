@@ -425,6 +425,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         {
             UnityMultiObjectInfo temp = new UnityMultiObjectInfo(prefabName, position, rotation, scale);
             Message objectMessage = new Message(MessageType.ADD_UNITY_OBJECT, JsonConvert.SerializeObject(temp));
+            SendMessage(objectMessage);
         } catch (Exception e)
         {
             Debug.LogError(e);

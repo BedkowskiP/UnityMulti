@@ -7,49 +7,49 @@ using UnityEngine;
 public class UnityMultiObjectInfo
 {
     [HideInInspector]
-    public string prefabName { get; private set; }
+    public string PrefabName { get; private set; }
 
-    private float posX { get; set; }
-    private float posY { get; set; }
-    private float posZ { get; set; }
+    public float PosX { get; set; }
+    public float PosY { get; set; }
+    public float PosZ { get; set; }
 
-    private float rotX { get; set; }
-    private float rotY { get; set; }
-    private float rotZ { get; set; }
-    private float rotW { get; set; }
+    public float RotX { get; set; }
+    public float RotY { get; set; }
+    public float RotZ { get; set; }
+    public float RotW { get; set; }
 
-    private float scalX { get; set; }
-    private float scalY { get; set; }
-    private float scalZ { get; set; }
+    public float ScalX { get; set; }
+    public float ScalY { get; set; }
+    public float ScalZ { get; set; }
     public UnityMultiObjectInfo(string prefabName, Vector3 position, Quaternion rotation, Vector3 scale)
     {
-        this.prefabName = prefabName;
+        this.PrefabName = prefabName;
 
-        posX = position.x;
-        posY = position.y;
-        posZ = position.z;
+        PosX = position.x;
+        PosY = position.y;
+        PosZ = position.z;
 
-        scalX = scale.x;
-        scalY = scale.y;
-        scalZ = scale.z;
+        ScalX = scale.x;
+        ScalY = scale.y;
+        ScalZ = scale.z;
 
-        rotX = rotation.x;
-        rotY = rotation.y;
-        rotZ = rotation.z;
-        rotW = rotation.w;
+        RotX = rotation.x;
+        RotY = rotation.y;
+        RotZ = rotation.z;
+        RotW = rotation.w;
     }
 
     public Vector3 GetPosition()
     {
-        return new Vector3(posX, posY, posZ);
+        return new Vector3(PosX, PosY, PosZ);
     }
     public Vector3 GetScale()
     {
-        return new Vector3(scalX, scalY, scalZ);
+        return new Vector3(ScalX, ScalY, ScalZ);
     }
     public Quaternion GetRotation()
     {
-        return new Quaternion(rotX, rotY, rotZ, rotW);
+        return new Quaternion(RotX, RotY, RotZ, RotW);
     }
 }
 

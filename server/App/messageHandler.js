@@ -135,15 +135,14 @@ const HandleObjectUnity = async (socket,MsgRecvived) =>
     let isErrorCode=0;
     let content = JSON.parse(MsgRecvived.Content)
     const RoomName = await roomsMan.GetUserRoomname(MsgRecvived.UserID)//USERINROOM USAGE 2# change laater
-    const reuslt=roomsMan.Rooms[RoomName].AddObject(content)
-
+    const reuslt=roomsMan.Rooms[RoomName].AddObject(content,MsgRecvived.UserID)
     isErrorCode=reuslt.ErrorCode;
     let jsonContent =
     {
-        PrefabName:content.PrefabName,
-        PosX:content.PosX,      PosY:content.PosY,      PosZ:content.PosZ,
-        RotX:content.RotX,      RotY:content.RoT,       RotZ:content.RoZ,       RotW:content.RotW,
-        ScalX:content.ScalX,    ScalY:content.ScalY,    ScalZ:content.ScalZ,
+        PrefabName:content.PrefabName,                  ObjectID:reuslt.ObjectID,
+        Position:{X:content.Position.x,   Y:content.Position.y,     Z:content.Position.z},
+        Rotation:{X:content.Rotation.x,   Y:content.Rotation.y,     Z:content.Rotation.z,     W:content.Rotation.w},
+        Scale:{X:content.Scale.x,     Y:content.Scale.y,    Z:content.Scale.z},
         Owner:MsgRecvived.UserID
     };
     let msg = JSON.stringify((MSG.CreateMsg(messageTypes.UNITYOBJECTRES,jsonContent,isErrorCode,1)))

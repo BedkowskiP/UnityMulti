@@ -255,9 +255,9 @@ if(TESTMODE)
     await new Promise(resolve => setTimeout(resolve, 7000));
     Content = {
       PrefabName:'FabA',
-      Position:'0:0:0',
-      Rotation:'0:0:0',
-      Scale:'1:1:1',
+      Position:{x:"1",y:"2",z:"6"},
+      Rotation:{x:"1",y:"4",z:"5",w:"7"},
+      Scale:{x:"11",y:"3",z:"2"},
       Owner:null
     }
     
@@ -332,7 +332,7 @@ if(TESTMODE)
 
 
 
-  Tester5((message));
+  //Tester5((message));
 
 
 
