@@ -4,22 +4,34 @@ using UnityEngine;
 
 public class UnityMultiObject : MonoBehaviour
 {
-    private UnityMultiNetworking multiNetworking;
-    public string ObjectName { get; private set; }
-
-    public Vector3 position { get; private set; }
-    public Quaternion rotation { get; private set; }
-    public Vector3 scale { get; private set; }
-
-    public void SetObjectName(string name)
+    public UnityMultiObject(UnityMultiNetworking multiNetworking, UnityMultiObjectInfo objectInfo)
     {
-        ObjectName = name;
+        this.multiNetworking = multiNetworking;
+        this.position = objectInfo.Position.GetVec3();
+        this.rotation = objectInfo.Rotation.GetQuat();
+        this.scale = objectInfo.Scale.GetVec3();
+        this.ObjectID = objectInfo.ObjectID;
+        this.Owner = objectInfo.Owner;
     }
-}
 
-public class UnityMultiObjectTransform : MonoBehaviour
-{
-    public bool UpdatePosition = true;
-    public bool UpdateRotation = true;
-    public bool UpdateScale = false;
+    [HideInInspector]
+    private UnityMultiNetworking multiNetworking;
+
+    [SerializeField]
+    private string ObjectID;
+    [SerializeField]
+    private string Owner;
+
+    public Vector3 position;
+    public Vector3 scale;
+    public Quaternion rotation;
+
+    public bool IsMine()
+    {
+        if (Owner == multiNetworking.clientData.UserID) return true;
+        else return false;
+    }
+    
+
+
 }
