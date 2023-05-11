@@ -17,12 +17,13 @@ public class MessageType
     public const string LEAVE_ROOM_RESPONSE = "responseLeaveRoom";
     public const string HOST_CHANGE = "hostChange";
     public const string HOST_CHANGE_RESPONSE = "responseHostChange";
-    public const string CONNECT = "connect";
-    public const string DISCONNECT = "disconnect";
     public const string VALIDATION_REQUEST = "validationRequest";
     public const string VALIDATION_RESPONSE = "validationResponse";
     public const string ADD_UNITY_OBJECT = "addUnityObject";
+    public const string ADD_UNITY_OBJECT_RESPONSE = "responseAddUnityObject";
 
+    public const string CONNECT = "connect";
+    public const string DISCONNECT = "disconnect";
     public const string GAME_STATE = "gameState";
     public const string PLAYER_POSITION = "playerPosition";
     public const string PLAYER_ROTATION = "playerRotation";

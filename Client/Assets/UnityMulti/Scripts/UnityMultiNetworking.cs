@@ -3,7 +3,7 @@ using WebSocketSharp;
 using System;
 using Newtonsoft.Json;
 using System.Collections;
-
+using UnityEditor;
 
 [RequireComponent(typeof(UnityMainThreadDispatcher))]
 public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDisposable
@@ -273,27 +273,38 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             {
                 case MessageType.PONG:
                     HandlePong(serverMessage);
+                    serverMessage = null;
                     break;
                 case MessageType.VALIDATION_RESPONSE:
                     HandleValidation(serverMessage);
+                    serverMessage = null;
                     break;
                 case MessageType.CREATE_ROOM_RESPONSE:
                     room.HandleCreateRoom(serverMessage);
+                    serverMessage = null;
                     break;
                 case MessageType.JOIN_ROOM_RESPONSE:
                     room.HandleJoinRoom(serverMessage);
+                    serverMessage = null;
                     break;
                 case MessageType.USER_JOIN:
                     room.HandleUserJoin(serverMessage);
+                    serverMessage = null;
                     break;
                 case MessageType.USER_LEAVE:
                     room.HandleUserLeave(serverMessage);
+                    serverMessage = null;
                     break;
                 case MessageType.LEAVE_ROOM_RESPONSE:
                     room.HandleLeaveRoom();
                     break;
                 case MessageType.HOST_CHANGE_RESPONSE:
                     room.HandleHostChange(serverMessage);
+                    serverMessage = null;
+                    break;
+                case MessageType.ADD_UNITY_OBJECT_RESPONSE:
+                    InstantiateNewObject(serverMessage);
+                    serverMessage = null;
                     break;
                 case MessageType.CHAT_MESSAGE:
                     // handle chat message
@@ -312,6 +323,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
                     }
                     break;
             }
+            
     }
     private void HandleValidation(Message serverMessage)
     {
@@ -421,14 +433,33 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             return;
         }
 
-        try
-        {
-            UnityMultiObjectInfo temp = new UnityMultiObjectInfo(prefabName, position, rotation, scale);
-            Message objectMessage = new Message(MessageType.ADD_UNITY_OBJECT, JsonConvert.SerializeObject(temp));
-        } catch (Exception e)
-        {
-            Debug.LogError(e);
-        }
+        GameObject tempObj = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/UnityMulti/Prefabs/"+prefabName+".prefab");
         
+        if(tempObj == null)
+        {
+            Debug.LogWarning("Couldn't load given prefab: " + prefabName);
+            Resources.UnloadUnusedAssets();
+            return;
+        } else
+        {
+            UnityMultiObject mulitObjTemp = tempObj.GetComponent<UnityMultiObject>();
+            if (mulitObjTemp == null)
+            {
+                Debug.LogWarning("Prefab '" + prefabName + "' don't have the <UnityMultiObject> component. Please add the component to the prefab before you try to instantiate it.");
+            } else
+            {
+                
+                UnityMultiObjectInfo temp = new UnityMultiObjectInfo(prefabName, position, rotation, scale);
+                Message objectMessage = new Message(MessageType.ADD_UNITY_OBJECT, JsonConvert.SerializeObject(temp));
+                SendMessage(objectMessage);
+            }
+            Resources.UnloadUnusedAssets();
+            return;
+        }
+    }
+
+    private void InstantiateNewObject(Message serverMessage)
+    {
+
     }
 }

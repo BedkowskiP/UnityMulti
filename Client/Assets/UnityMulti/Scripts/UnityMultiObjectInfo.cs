@@ -6,50 +6,88 @@ using UnityEngine;
 [System.Serializable]
 public class UnityMultiObjectInfo
 {
-    [HideInInspector]
-    public string prefabName { get; private set; }
-
-    private float posX { get; set; }
-    private float posY { get; set; }
-    private float posZ { get; set; }
-
-    private float rotX { get; set; }
-    private float rotY { get; set; }
-    private float rotZ { get; set; }
-    private float rotW { get; set; }
-
-    private float scalX { get; set; }
-    private float scalY { get; set; }
-    private float scalZ { get; set; }
     public UnityMultiObjectInfo(string prefabName, Vector3 position, Quaternion rotation, Vector3 scale)
     {
-        this.prefabName = prefabName;
-
-        posX = position.x;
-        posY = position.y;
-        posZ = position.z;
-
-        scalX = scale.x;
-        scalY = scale.y;
-        scalZ = scale.z;
-
-        rotX = rotation.x;
-        rotY = rotation.y;
-        rotZ = rotation.z;
-        rotW = rotation.w;
+        this.PrefabName = prefabName;
+        this.Position = new ObjVec3(position);
+        this.Rotation = new ObjQuat(rotation);
+        this.Scale = new ObjVec3(scale);
     }
 
-    public Vector3 GetPosition()
+    [JsonConstructor]
+    public UnityMultiObjectInfo(string PrefabName, ObjVec3 Position, ObjQuat Rotation, ObjVec3 Scale, string Owner, string ObjectID)
     {
-        return new Vector3(posX, posY, posZ);
+        this.PrefabName = PrefabName;
+        this.Position = Position;
+        this.Rotation = Rotation;
+        this.Scale = Scale;
+        this.Owner = Owner;
+        this.ObjectID = ObjectID;
     }
-    public Vector3 GetScale()
+
+    public string PrefabName { get; private set; }
+    public string ObjectID { get; private set; }
+    public string Owner { get; private set; }
+
+    public ObjVec3 Position { get; private set; }
+    public ObjQuat Rotation { get; private set; }
+    public ObjVec3 Scale { get; private set; }
+
+    public class ObjVec3
     {
-        return new Vector3(scalX, scalY, scalZ);
+        public float x { get; set; }
+        public float y { get; set; }
+        public float z { get; set; }
+
+        public ObjVec3(Vector3 vec)
+        {
+            this.x = vec.x;
+            this.y = vec.y;
+            this.z = vec.z;
+        }
+
+        [JsonConstructor]
+        public ObjVec3(float x, float y, float z)
+        {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+
+        public Vector3 GetVec3()
+        {
+            return new Vector3(x, y, z);
+        }
     }
-    public Quaternion GetRotation()
+
+    public class ObjQuat
     {
-        return new Quaternion(rotX, rotY, rotZ, rotW);
+        public float x { get; set; }
+        public float y { get; set; }
+        public float z { get; set; }
+        public float w { get; set; }
+
+        public ObjQuat(Quaternion quat)
+        {
+            this.x = quat.x;
+            this.y = quat.y;
+            this.z = quat.z;
+            this.w = quat.w;
+        }
+
+        [JsonConstructor]
+        public ObjQuat(float x, float y, float z, float w)
+        {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.w = w;
+        }
+
+        public Quaternion GetQuat()
+        {
+            return new Quaternion(x, y, z, w);
+        }
     }
 }
 
