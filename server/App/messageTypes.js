@@ -14,7 +14,9 @@
   const USERJOIN = "userJoin";
   const USERLEAVE = "userLeave";
   const UNITYOBJECT ="addUnityObject"
-  const UNITYOBJECTRES ="responeAddUnityObject"
+  const UNITYOBJECTRES ="responseAddUnityObject"
+  const SCENECHANGE ="sceneChange"
+  const RESSCENECHANGE ="responseSceneChange"
 /// <summary>
 /// these messages are used check latency.
 /// </summary>
@@ -60,9 +62,9 @@ const SERVER_MESSAGE = "serverMessage"; ///NOT IMPLEMENTED
 let CUSTOM = [];
 
 module.exports = {
-  CREATEROOM,
-  JOINROOM,
-  LEAVEROOM,
+    CREATEROOM,
+    JOINROOM,
+    LEAVEROOM,
     RESVALIDATION,
     REQVALIDATION,
     PING,
@@ -87,5 +89,7 @@ module.exports = {
     HOSTCHANGE,
     RESHOSTCHANGE,
     UNITYOBJECT,
-    UNITYOBJECTRES
+    UNITYOBJECTRES,
+    RESSCENECHANGE,
+    SCENECHANGE
   };

@@ -4,7 +4,7 @@ const usersMan = require('./usersManager')
 const roomsMan = require('./roomsManager')
 const MSG = require('./message')
 
-const DEBUGMODE = false;  //shows outcoming msgs                           
+const DEBUGMODE = true;  //shows outcoming msgs                           
 
 
 
@@ -15,7 +15,7 @@ const HandleValidation =  async (socket,jsonmsg) =>
     let isErrorCode=0;
     let jsonContent = {}
     const UserID = await usersMan.CreateUser();
-    if(UserID===400)socket?.send(JSON.stringify(await MSG.CreateMsg(messageTypes.RESVALIDATION,jsonContent,400,DEBUGMODE)));
+    if(UserID===400)socket?.send(JSON.stringify(MSG.CreateMsg(messageTypes.RESVALIDATION,jsonContent,400,DEBUGMODE)));
     else
     {
         isErrorCode=usersMan.Users[UserID].SetName(content.Username)
@@ -29,7 +29,7 @@ const HandleValidation =  async (socket,jsonmsg) =>
                 Validated : usersMan.Users[UserID].valid
             };
         }
-        let msg = JSON.stringify(await MSG.CreateMsg(messageTypes.RESVALIDATION,jsonContent,isErrorCode,DEBUGMODE))
+        let msg = JSON.stringify(MSG.CreateMsg(messageTypes.RESVALIDATION,jsonContent,isErrorCode,DEBUGMODE))
         socket?.send(msg);
         
     }
@@ -37,7 +37,7 @@ const HandleValidation =  async (socket,jsonmsg) =>
 const HandlePing = async (socket,jsonmsg) => 
 {
     let isErrorCode = 0;
-    let msg=JSON.stringify(await MSG.CreateMsg(messageTypes.PONG,jsonmsg.Timestamp,isErrorCode,false))
+    let msg=JSON.stringify(MSG.CreateMsg(messageTypes.PONG,jsonmsg.Timestamp,isErrorCode,false))
     socket?.send(msg);
 };
 
@@ -60,7 +60,7 @@ const HandleCreateRoom = async (socket,jsonmsg) =>
         SceneName : content.SceneName
     };
     await roomsMan.AddRoom(content,jsonmsg.UserID);
-    let msg = JSON.stringify((await MSG.CreateMsg(messageTypes.RESCREATEROOM,jsonContent,isErrorCode,DEBUGMODE)))
+    let msg = JSON.stringify((MSG.CreateMsg(messageTypes.RESCREATEROOM,jsonContent,isErrorCode,DEBUGMODE)))
     socket?.send(msg);
     HandleJoinRoom(socket,jsonmsg)//205 Await
 }
@@ -75,7 +75,7 @@ const HandleJoinRoom = async (socket,jsonmsg) =>
         Settings: { RoomName:content.RoomName,SceneName:roomsMan.Rooms[content.RoomName].sceneName,HostID:await roomsMan.Rooms[content.RoomName].host},
         UserList: await(roomsMan.Rooms[content.RoomName].users)//get list of users that joined given room   "list:[{UserID,Username},{UserID,Username}]"
     };
-    let msg = JSON.stringify(await MSG.CreateMsg(messageTypes.RESJOINROOM,jsonContent,isErrorCode,DEBUGMODE))
+    let msg = JSON.stringify(MSG.CreateMsg(messageTypes.RESJOINROOM,jsonContent,isErrorCode,DEBUGMODE))
     socket?.send(msg);
     //broadcast to users in room
     jsonContent =
@@ -83,8 +83,9 @@ const HandleJoinRoom = async (socket,jsonmsg) =>
         UserID : jsonmsg.UserID,
         Username : usersMan.Users[jsonmsg.UserID].name
     }
-    msg = JSON.stringify((await MSG.CreateMsg(messageTypes.USERJOIN,jsonContent,isErrorCode,DEBUGMODE)))
-    await roomsMan.BroadcastMsgToUsersInRoom(content.RoomName,msg,jsonmsg.UserID,usersMan.Users);
+    msg = JSON.stringify((MSG.CreateMsg(messageTypes.USERJOIN,jsonContent,isErrorCode,DEBUGMODE)))
+    
+    roomsMan.BroadcastMsgToUsersInRoom(content.RoomName,msg,jsonmsg.UserID,usersMan.Users);
 }
 
 const HandleLeaveRoom = async (socket,jsonmsg) =>
@@ -105,10 +106,10 @@ const HandleLeaveRoom = async (socket,jsonmsg) =>
         UserID : jsonmsg.UserID,
         Username : usersMan.Users[jsonmsg.UserID].name
       }
-      let msg = JSON.stringify((await MSG.CreateMsg(messageTypes.USERLEAVE,jsonContent,isErrorCode,DEBUGMODE)))
-      await roomsMan.BroadcastMsgToUsersInRoom(content.RoomName,msg,jsonmsg.UserID,usersMan.Users);
+      let msg = JSON.stringify((MSG.CreateMsg(messageTypes.USERLEAVE,jsonContent,isErrorCode,DEBUGMODE)))
+      roomsMan.BroadcastMsgToUsersInRoom(content.RoomName,msg,jsonmsg.UserID,usersMan.Users);
   }
-  let msg = JSON.stringify(await MSG.CreateMsg(messageTypes.RESLEAVEROOM,jsonContent,isErrorCode,DEBUGMODE))
+  let msg = JSON.stringify(MSG.CreateMsg(messageTypes.RESLEAVEROOM,jsonContent,isErrorCode,DEBUGMODE))
   socket?.send(msg);
   
 }
@@ -129,26 +130,38 @@ const HandleHostChange = async (socket,jsonmsg) =>
 // UnityOBJECT
 ///
 
-const HandleObjectUnity = async (socket,jsonmsg) =>
+const HandleObjectUnity = async (socket,MsgRecvived) =>
 {
     let isErrorCode=0;
-    let content = JSON.parse(jsonmsg.Content)
-    const RoomName = await roomsMan.GetUserRoomname(jsonmsg.UserID)
-    roomsMan.Rooms[RoomName].AddObject(jsonmsg.UserID,content)
-
-
+    let content = JSON.parse(MsgRecvived.Content)
+    const RoomName = await roomsMan.GetUserRoomname(MsgRecvived.UserID)//USERINROOM USAGE 2# change laater
+    const reuslt=roomsMan.Rooms[RoomName].AddObject(content,MsgRecvived.UserID)
+    isErrorCode=reuslt.ErrorCode;
     let jsonContent =
     {
-        PrefabName:content.PrefabName,
-        Position:content.Position,
-        Rotation:content.Rotation,
-        Scale:content.Scale,
-        Owner:content.Owner
+        PrefabName:content.PrefabName,                  ObjectID:reuslt.ObjectID,
+        Position:{X:content.Position.x,   Y:content.Position.y,     Z:content.Position.z},
+        Rotation:{X:content.Rotation.x,   Y:content.Rotation.y,     Z:content.Rotation.z,     W:content.Rotation.w},
+        Scale:{X:content.Scale.x,     Y:content.Scale.y,    Z:content.Scale.z},
+        Owner:MsgRecvived.UserID
     };
-    let msg = JSON.stringify((await MSG.CreateMsg(messageTypes.UNITYOBJECTRES,jsonContent,isErrorCode,1)))
-    await roomsMan.BroadcastMsgToUsersInRoom(RoomName,msg,jsonmsg.UserID,usersMan.Users);
+    let msg = JSON.stringify((MSG.CreateMsg(messageTypes.UNITYOBJECTRES,jsonContent,isErrorCode,1)))
+    roomsMan.BroadcastMsgToUsersInRoom(RoomName,msg,null,usersMan.Users);//changed except from jsonmsg.UserID-> null
 }
+const HandleSceneChange  = async (socket,MsgRecvived) =>
+{
+    let isErrorCode=0;
+    let contentMsgRecvived = JSON.parse(MsgRecvived.Content)
+    const RoomName = await roomsMan.GetUserRoomname(MsgRecvived.UserID)//USERINROOM USAGE 3# change laater
 
+    isErrorCode=roomsMan.Rooms[RoomName].SetSceneName(contentMsgRecvived.SceneName,MsgRecvived.UserID);
+    if(isErrorCode!=0)
+    {
+        let msg = JSON.stringify((MSG.CreateMsg(messageTypes.RESSCENECHANGE,contentMsgRecvived,isErrorCode,DEBUGMODE)))
+        socket?.send(msg);
+    }
+    //else//broadcast to all about scene change
+}
 module.exports = {
     HandleValidation,
     HandleCreateRoom,
@@ -156,5 +169,6 @@ module.exports = {
     HandleLeaveRoom,
     HandlePing,
     HandleHostChange,
-    HandleObjectUnity
+    HandleObjectUnity,
+    HandleSceneChange
   };
