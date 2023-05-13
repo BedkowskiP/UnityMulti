@@ -14,7 +14,7 @@ const HandleValidation =  async (socket,jsonmsg) =>
     let content = JSON.parse(jsonmsg.Content)
     let isErrorCode=0;
     let jsonContent = {}
-    const UserID = await usersMan.CreateUser();
+    const UserID = await usersMan.CreateUser(socket);
     if(UserID===400)socket?.send(JSON.stringify(MSG.CreateMsg(messageTypes.RESVALIDATION,jsonContent,400,DEBUGMODE)));
     else
     {

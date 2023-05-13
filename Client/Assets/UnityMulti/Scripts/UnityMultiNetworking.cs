@@ -4,6 +4,8 @@ using System;
 using Newtonsoft.Json;
 using System.Collections;
 using UnityEditor;
+using System.Threading;
+using System.Threading.Tasks;
 
 [RequireComponent(typeof(UnityMainThreadDispatcher))]
 public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDisposable
@@ -17,11 +19,9 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     public UnityMultiUser clientData { get; private set; }
     public UnityMultiRoom room { get; private set; }
 
-    public bool IsConnected
-    {
-        get { return ws != null && ws.ReadyState == WebSocketState.Open; }
-        private set { }
-    }
+    private volatile WebSocketState _webSocketState = WebSocketState.Connecting;
+    public bool IsConnected => _webSocketState == WebSocketState.Open;
+    //public bool IsConnected => ws?.ReadyState == WebSocketState.Open;
 
     public string connectionURL { get; private set; }
     public bool _autoReconnect = true;
@@ -81,7 +81,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     {
         IsApplicationPlaying();
         if (!IsConnected) isInRoom = false;
-        if (!isValidated && isInRoom) isInRoom = false;
+        if (!isValidated && isInRoom) isInRoom = false;       
     }
 
     private void OnDisable()
@@ -110,13 +110,18 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
     private void CreateConnection()
     {
+        if (ws != null && ws.ReadyState == WebSocketState.Open)
+        {
+            return;
+        }
+
         ws = new WebSocket(connectionURL);
 
         ws.OnOpen += (sender, args) =>
         {
             UnityMainThreadDispatcher.Instance().Enqueue(() => {
                 InitialConnectionEvent?.Invoke();
-                ConnectionStateChangeEvent?.Invoke(ws.ReadyState);
+                ConnectionState();
                 RequestValidation();
             });
         };
@@ -132,7 +137,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         {
             UnityMainThreadDispatcher.Instance().Enqueue(() => {
                 ClientErrorEvent?.Invoke(error);
-                ConnectionStateChangeEvent?.Invoke(ws.ReadyState);
+                ConnectionState();
             });
         };
 
@@ -140,13 +145,14 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         {
             UnityMainThreadDispatcher.Instance().Enqueue(() => {
                 ClientDisconnectedEvent?.Invoke(close);
-                ConnectionStateChangeEvent?.Invoke(ws.ReadyState);
+                ConnectionState();
                 isConnectionReady = false;
                 isValidated = false;
+                room.Reset();
                 ReconnectEvent?.Invoke(close);
-                if (_autoReconnect)
+                if (_autoReconnect && close.Code != 1000)
                 {
-                    Reconnect(close);
+                    StartCoroutine(Reconnect(close));
                 }
             });
         };
@@ -154,69 +160,73 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         ws.Connect();
     }
 
-    public void Reconnect()
+    private void ConnectionState()
     {
-        StartCoroutine(ReconnectCor());
-    }
-    public void Reconnect(CloseEventArgs close)
-    {
-        StartCoroutine(ReconnectCor(close));
+        _webSocketState = ws.ReadyState;
+        ConnectionStateChangeEvent?.Invoke(ws.ReadyState);
     }
 
-    private IEnumerator ReconnectCor()
+    private IEnumerator Reconnect()
     {
         if (!_isReconnecting)
         {
+            _isReconnecting = true;
             if (isAppPlaying)
             {
-                _isReconnecting = true;
+                    while (_isReconnecting && reconnectAttempt < maxReconnectAttempt)
+                    {
+                        if (IsConnected) break;
+                        Debug.Log("Attempting to reconnect... " + (reconnectAttempt + 1) + "/" + maxReconnectAttempt);
+                        CreateConnection();
 
-                while (_isReconnecting && reconnectAttempt < maxReconnectAttempt && !IsConnected && isAppPlaying)
+                        yield return new WaitForSeconds(ReconnectDelaySeconds);
+                        reconnectAttempt++;
+                        if(!IsConnected) Dispose();
+                    }
+
+                if (IsConnected)
                 {
+                    Debug.Log("Reconnected successfully");
+                }
+                else if (reconnectAttempt >= maxReconnectAttempt)
+                {
+                    Debug.LogWarning("Reached max reconnect attempts: " + maxReconnectAttempt);
+                }
+
+                reconnectAttempt = 0;
+            }
+        }
+        
+    }
+
+
+    private IEnumerator Reconnect(CloseEventArgs close)
+    {
+        if (!_isReconnecting && close.Code != 1000)
+        {
+            _isReconnecting = true;
+            if (isAppPlaying)
+            {
+                while (_isReconnecting && reconnectAttempt < maxReconnectAttempt)
+                {
+                    if (IsConnected) break;
                     Debug.Log("Attempting to reconnect... " + (reconnectAttempt + 1) + "/" + maxReconnectAttempt);
                     Connect(ws.Url.ToString(), clientData.Username);
 
                     yield return new WaitForSeconds(ReconnectDelaySeconds);
                     reconnectAttempt++;
-                    Dispose();
+                    if (!IsConnected) Dispose();
                 }
 
-                if (reconnectAttempt >= maxReconnectAttempt)
+                if (IsConnected)
+                {
+                    Debug.Log("Reconnected successfully");
+                }
+                else if (reconnectAttempt >= maxReconnectAttempt)
                 {
                     Debug.LogWarning("Reached max reconnect attempts: " + maxReconnectAttempt);
                 }
 
-                _isReconnecting = false;
-                reconnectAttempt = 0;
-            }
-        }
-    }
-
-
-    private IEnumerator ReconnectCor(CloseEventArgs close)
-    {
-        if (!_isReconnecting && close.Code != 1000)
-        {
-            if (isAppPlaying)
-            {
-                _isReconnecting = true;
-
-                while (_isReconnecting && reconnectAttempt < maxReconnectAttempt && !IsConnected && isAppPlaying)
-                {
-                    Debug.Log("Attempting to auto reconnect... " + (reconnectAttempt + 1) + "/" + maxReconnectAttempt);
-                    Connect(ws.Url.ToString(), clientData.Username);
-
-                    yield return new WaitForSeconds(ReconnectDelaySeconds);
-                    reconnectAttempt++;
-                    Dispose();
-                }
-
-                if (reconnectAttempt >= maxReconnectAttempt)
-                {
-                    Debug.LogWarning("Reached max reconnect attempts: " + maxReconnectAttempt);
-                }
-
-                _isReconnecting = false;
                 reconnectAttempt = 0;
             }
         }
@@ -224,9 +234,10 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
     public void Dispose()
     {
-        if (ws != null && ws.ReadyState == WebSocketState.Open)
+        if (ws != null)
         {
             ws.Close(1000, "Intentional disconnect");
+            ws = null;
         }
     }
 
@@ -303,6 +314,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
                     serverMessage = null;
                     break;
                 case MessageType.ADD_UNITY_OBJECT_RESPONSE:
+                    Debug.Log("boop");
                     InstantiateNewObject(serverMessage);
                     serverMessage = null;
                     break;

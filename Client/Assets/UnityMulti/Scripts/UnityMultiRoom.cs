@@ -59,9 +59,14 @@ public class UnityMultiRoom : MonoBehaviour
     private UnityMultiNetworking multiNetworking;
     public UnityMultiRoomSettings Settings { get; private set; }
     public List<UnityMultiUser> UserList { get; private set; } = new List<UnityMultiUser>();
-    private List<GameObject> roomObjectList = new List<GameObject>();
-    private Dictionary<string, GameObject> clientObjectDict = new Dictionary<string, GameObject>();
+
     public bool isSceneLoaded { get; private set; } = false;
+
+    public void Reset()
+    {
+        Settings = null;
+        UserList = new List<UnityMultiUser>();
+    }
 
     [JsonConstructor]
     public UnityMultiRoom(UnityMultiRoomSettings Settings, List<UnityMultiUser> UserList)
