@@ -55,7 +55,6 @@ public class Message
         this.ErrorCode = errorCode;
     }
 
-
     public Message(string type, string content, long timestamp, string UserID)
     {
         this.Type = type;
@@ -63,6 +62,7 @@ public class Message
         this.Timestamp = timestamp;
         this.UserID = UserID;
     }
+
     public Message(string type, string content)
     {
         this.Type = type;

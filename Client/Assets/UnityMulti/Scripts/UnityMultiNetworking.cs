@@ -4,8 +4,6 @@ using System;
 using Newtonsoft.Json;
 using System.Collections;
 using UnityEditor;
-using System.Threading;
-using System.Threading.Tasks;
 
 [RequireComponent(typeof(UnityMainThreadDispatcher))]
 public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDisposable
@@ -314,7 +312,6 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
                     serverMessage = null;
                     break;
                 case MessageType.ADD_UNITY_OBJECT_RESPONSE:
-                    Debug.Log("boop");
                     InstantiateNewObject(serverMessage);
                     serverMessage = null;
                     break;
@@ -427,7 +424,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         ClientLeaveEvent?.Invoke(user);
     }
 
-    public void InstantiatePlayerObject(string prefabName, Vector3 position, Quaternion rotation, Vector3 scale)
+    public void InstantiatePlayerObject(string prefabName, Vector3 position, Quaternion rotation, Vector3 scale, GameObject parent)
     {
         if (!isValidated)
         {
@@ -445,15 +442,16 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             return;
         }
 
-        GameObject tempObj = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/UnityMulti/Prefabs/"+prefabName+".prefab");
-        
-        if(tempObj == null)
+        GameObject tempObj = Resources.Load<GameObject>(prefabName);
+        if (tempObj == null)
         {
+
             Debug.LogWarning("Couldn't load given prefab: " + prefabName);
             Resources.UnloadUnusedAssets();
             return;
         } else
         {
+            
             UnityMultiObject mulitObjTemp = tempObj.GetComponent<UnityMultiObject>();
             if (mulitObjTemp == null)
             {
@@ -461,7 +459,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             } else
             {
                 
-                UnityMultiObjectInfo temp = new UnityMultiObjectInfo(prefabName, position, rotation, scale);
+                UnityMultiObjectInfo temp = new UnityMultiObjectInfo(prefabName, position, rotation, scale, parent);
                 Message objectMessage = new Message(MessageType.ADD_UNITY_OBJECT, JsonConvert.SerializeObject(temp));
                 SendMessage(objectMessage);
             }
@@ -472,6 +470,21 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
     private void InstantiateNewObject(Message serverMessage)
     {
+        UnityMultiObjectInfo temp = JsonConvert.DeserializeObject<UnityMultiObjectInfo>(serverMessage.Content);
 
+        GameObject tempObj = Resources.Load<GameObject>(temp.PrefabName);
+        UnityMultiObject multiObject = tempObj.GetComponent<UnityMultiObject>();
+        multiObject.SetParams(this, temp);
+
+        try
+        {
+            GameObject parent = GameObject.Find(temp.ParentObject);
+            if(parent == null) tempObj = Instantiate(tempObj, temp.Position.GetVec3(), temp.Rotation.GetQuat());
+            else tempObj = Instantiate(tempObj, temp.Position.GetVec3(), temp.Rotation.GetQuat(), parent.transform);
+            tempObj.name = "MultiObject("+temp.ObjectID+")";
+        } catch (Exception e)
+        {
+            Debug.LogError(e);
+        }
     }
 }

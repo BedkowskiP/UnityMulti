@@ -54,7 +54,7 @@ public class UnityMultiRoomSettings
     }
 }
 
-public class UnityMultiRoom : MonoBehaviour
+public class UnityMultiRoom
 {
     private UnityMultiNetworking multiNetworking;
     public UnityMultiRoomSettings Settings { get; private set; }
