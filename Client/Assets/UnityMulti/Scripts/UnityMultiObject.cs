@@ -18,9 +18,9 @@ public class UnityMultiObject : MonoBehaviour
     private UnityMultiObjectTransform objectTransform;
 
     [SerializeField]
-    public string ObjectID {get; private set;}
+    private string ObjectID;
     [SerializeField]
-    public string Owner { get; private set; }
+    private string Owner;
 
     public delegate void Vec3E(Vector3 value, Vector3 newValue);
     public event Vec3E UpdatePosition;
