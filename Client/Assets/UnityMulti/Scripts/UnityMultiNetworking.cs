@@ -3,7 +3,8 @@ using WebSocketSharp;
 using System;
 using Newtonsoft.Json;
 using System.Collections;
-using UnityEditor;
+using UnityEngine.SceneManagement;
+using System.Threading.Tasks;
 
 [RequireComponent(typeof(UnityMainThreadDispatcher))]
 public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDisposable
@@ -13,20 +14,22 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         return "UnityMultiNetworking";
     }
 
-    private WebSocket ws;
+    private volatile WebSocket ws;
     public UnityMultiUser clientData { get; private set; }
     public UnityMultiRoom room { get; private set; }
 
     private volatile WebSocketState _webSocketState = WebSocketState.Connecting;
     public bool IsConnected => _webSocketState == WebSocketState.Open;
-    //public bool IsConnected => ws?.ReadyState == WebSocketState.Open;
+
+    public string startingScene;
 
     public string connectionURL { get; private set; }
     public bool _autoReconnect = true;
     private bool _isReconnecting;
-    public float ReconnectDelaySeconds = 10f;
+    public float ReconnectDelaySeconds = 2f;
     public int maxReconnectAttempt = 10;
     private int reconnectAttempt = 0;
+
 
     private long pingTimestamp;
     private long latency;
@@ -59,9 +62,6 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     public delegate void MultiErrorE(ErrorCode errorCode);
     public event MultiErrorE MultiErrorEvent;
 
-    private delegate void ReconnectE(CloseEventArgs close);
-    private event ReconnectE ReconnectEvent;
-
     public delegate void RoomE(string roomName);
     public event RoomE CreateRoomEvent;
     public event RoomE JoinRoomEvent;
@@ -71,15 +71,11 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     public event RoomClientChangeE ClientJoinEvent;
     public event RoomClientChangeE ClientLeaveEvent;
 
-    protected override void Awake() {
-        room = new UnityMultiRoom(this);
-    }
-
     private void Update()
     {
         IsApplicationPlaying();
         if (!IsConnected) isInRoom = false;
-        if (!isValidated && isInRoom) isInRoom = false;       
+        if (!isValidated && isInRoom) isInRoom = false;
     }
 
     private void OnDisable()
@@ -94,6 +90,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
     public void Connect(string url)
     {
+        startingScene = SceneManager.GetActiveScene().name;
         connectionURL = url;
         clientData = new UnityMultiUser();
         CreateConnection();
@@ -101,6 +98,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
     public void Connect(string url, string username)
     {
+        startingScene = SceneManager.GetActiveScene().name;
         connectionURL = url;
         clientData = new UnityMultiUser(username);
         CreateConnection();
@@ -108,10 +106,26 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
     private void CreateConnection()
     {
-        if (ws != null && ws.ReadyState == WebSocketState.Open)
+        isValidated = false;
+        isConnectionReady = false;
+        if (room != null)
         {
-            return;
+            room.Reset();
         }
+
+        if (ws != null)
+        {
+            if (ws.ReadyState == WebSocketState.Open)
+            {
+                return;
+            }
+            else
+            {
+                ws.CloseAsync();
+            }
+        }
+
+        SetupRoom();
 
         ws = new WebSocket(connectionURL);
 
@@ -142,15 +156,17 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         ws.OnClose += (sender, close) =>
         {
             UnityMainThreadDispatcher.Instance().Enqueue(() => {
-                ClientDisconnectedEvent?.Invoke(close);
                 ConnectionState();
-                isConnectionReady = false;
-                isValidated = false;
-                room.Reset();
-                ReconnectEvent?.Invoke(close);
+                ClientDisconnectedEvent?.Invoke(close);
+                ws.Close();
+                ws = null;
+            
                 if (_autoReconnect && close.Code != 1000)
                 {
-                    StartCoroutine(Reconnect(close));
+
+                    //CreateConnection();
+                    //StartCoroutine(Reconnect(close));
+                    StartCoroutine(Reconnect());
                 }
             });
         };
@@ -158,10 +174,28 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         ws.Connect();
     }
 
+    public void Dispose()
+    {
+        if (ws != null)
+        {
+            ws.Close(1000, "Intentional disconnect");
+            ws = null;
+        }
+    }
+
+    public void Disconnect()
+    {
+        isDisconnecting = true;
+        Dispose();
+    }
+
     private void ConnectionState()
     {
-        _webSocketState = ws.ReadyState;
-        ConnectionStateChangeEvent?.Invoke(ws.ReadyState);
+        if(ws != null)
+        {
+            _webSocketState = ws.ReadyState;
+            ConnectionStateChangeEvent?.Invoke(ws.ReadyState);
+        }
     }
 
     private IEnumerator Reconnect()
@@ -171,45 +205,16 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             _isReconnecting = true;
             if (isAppPlaying)
             {
-                    while (_isReconnecting && reconnectAttempt < maxReconnectAttempt)
-                    {
-                        if (IsConnected) break;
-                        Debug.Log("Attempting to reconnect... " + (reconnectAttempt + 1) + "/" + maxReconnectAttempt);
-                        CreateConnection();
-
-                        yield return new WaitForSeconds(ReconnectDelaySeconds);
-                        reconnectAttempt++;
-                        if(!IsConnected) Dispose();
-                    }
-
-                if (IsConnected)
-                {
-                    Debug.Log("Reconnected successfully");
-                }
-                else if (reconnectAttempt >= maxReconnectAttempt)
-                {
-                    Debug.LogWarning("Reached max reconnect attempts: " + maxReconnectAttempt);
-                }
-
-                reconnectAttempt = 0;
-            }
-        }
-        
-    }
-
-
-    private IEnumerator Reconnect(CloseEventArgs close)
-    {
-        if (!_isReconnecting && close.Code != 1000)
-        {
-            _isReconnecting = true;
-            if (isAppPlaying)
-            {
+                Debug.Log("Starting reconnecting");
                 while (_isReconnecting && reconnectAttempt < maxReconnectAttempt)
                 {
-                    if (IsConnected) break;
+                    if (IsConnected)
+                    {
+                        break;
+                    }
+
                     Debug.Log("Attempting to reconnect... " + (reconnectAttempt + 1) + "/" + maxReconnectAttempt);
-                    Connect(ws.Url.ToString(), clientData.Username);
+                    CreateConnection();
 
                     yield return new WaitForSeconds(ReconnectDelaySeconds);
                     reconnectAttempt++;
@@ -227,22 +232,9 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
                 reconnectAttempt = 0;
             }
+            _isReconnecting = false;
         }
-    }
-
-    public void Dispose()
-    {
-        if (ws != null)
-        {
-            ws.Close(1000, "Intentional disconnect");
-            ws = null;
-        }
-    }
-
-    public void Disconnect()
-    {
-        isDisconnecting = true;
-        Dispose();
+        
     }
 
     public void SendMessage(Message message)
@@ -275,7 +267,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         SendMessage(validationRequest);
     }
 
-    private void OnServerMessage(string message)
+    private async void OnServerMessage(string message)
     {
             Message serverMessage = JsonConvert.DeserializeObject<Message>(message);
             switch (serverMessage.Type)
@@ -293,7 +285,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
                     serverMessage = null;
                     break;
                 case MessageType.JOIN_ROOM_RESPONSE:
-                    room.HandleJoinRoom(serverMessage);
+                    await room.HandleJoinRoom(serverMessage);
                     serverMessage = null;
                     break;
                 case MessageType.USER_JOIN:
@@ -424,22 +416,22 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         ClientLeaveEvent?.Invoke(user);
     }
 
-    public void InstantiatePlayerObject(string prefabName, Vector3 position, Quaternion rotation, Vector3 scale, GameObject parent)
+    public async void InstantiatePlayerObject(string prefabName, Vector3 position, Quaternion rotation, Vector3 scale, GameObject parent)
     {
-        if (!isValidated)
+        while (!isValidated)
         {
-            Debug.Log("User not validated yet. Can't instantiate objects while not validated.");
-            return;
+            await Task.Yield();
         }
+
         if (!isInRoom)
         {
             Debug.Log("User not in room. Can't instantiate objects while not in room.");
             return;
         }
-        if (!room.isSceneLoaded)
+
+        while (!room.isSceneLoaded)
         {
-            Debug.Log("GameScene not loaded yet. Please wait before u try to instantiated objects");
-            return;
+            await Task.Yield();
         }
 
         GameObject tempObj = Resources.Load<GameObject>(prefabName);
@@ -473,6 +465,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         UnityMultiObjectInfo temp = JsonConvert.DeserializeObject<UnityMultiObjectInfo>(serverMessage.Content);
 
         GameObject tempObj = Resources.Load<GameObject>(temp.PrefabName);
+
         UnityMultiObject multiObject = tempObj.GetComponent<UnityMultiObject>();
         multiObject.SetParams(this, temp);
 
@@ -482,9 +475,17 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             if(parent == null) tempObj = Instantiate(tempObj, temp.Position.GetVec3(), temp.Rotation.GetQuat());
             else tempObj = Instantiate(tempObj, temp.Position.GetVec3(), temp.Rotation.GetQuat(), parent.transform);
             tempObj.name = "MultiObject("+temp.ObjectID+")";
+            room.loadedPrefabs.Add(tempObj);
         } catch (Exception e)
         {
             Debug.LogError(e);
         }
+    }
+
+    private void SetupRoom()
+    {
+        room = null;
+        room = gameObject.AddComponent<UnityMultiRoom>();
+        room.AddNetworking(this);
     }
 }

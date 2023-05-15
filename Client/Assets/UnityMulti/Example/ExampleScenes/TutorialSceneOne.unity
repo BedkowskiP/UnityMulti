@@ -262,9 +262,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   multiNetworking: {fileID: 0}
-  connectionState: 0
   url: ws://localhost:8080
   ms: 0
+  startingScene: TutorialSceneOne
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0

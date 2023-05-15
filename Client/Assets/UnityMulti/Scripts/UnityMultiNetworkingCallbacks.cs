@@ -38,8 +38,8 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
 
     }
     public virtual void OnClientDisconnected(CloseEventArgs close)
-    { 
-
+    {
+        
     }
     public virtual void OnCustomMessage(Message serverMessage)
     {

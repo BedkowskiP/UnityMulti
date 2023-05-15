@@ -1,5 +1,6 @@
 using Newtonsoft.Json;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -54,11 +55,13 @@ public class UnityMultiRoomSettings
     }
 }
 
-public class UnityMultiRoom
+public class UnityMultiRoom : MonoBehaviour
 {
     private UnityMultiNetworking multiNetworking;
     public UnityMultiRoomSettings Settings { get; private set; }
     public List<UnityMultiUser> UserList { get; private set; } = new List<UnityMultiUser>();
+
+    public List<GameObject> loadedPrefabs = new List<GameObject>();
 
     public bool isSceneLoaded { get; private set; } = false;
 
@@ -66,6 +69,19 @@ public class UnityMultiRoom
     {
         Settings = null;
         UserList = new List<UnityMultiUser>();
+        if(loadedPrefabs.Count > 0)
+        {
+            for (int i = loadedPrefabs.Count - 1; i >= 0; i--)
+            {
+                GameObject obj = loadedPrefabs[i];
+                if (obj != null)
+                {
+                    Destroy(obj);
+                }
+                loadedPrefabs.RemoveAt(i);
+            }
+        }
+
     }
 
     [JsonConstructor]
@@ -76,7 +92,12 @@ public class UnityMultiRoom
         this.UserList = UserList;
     }
 
-    public UnityMultiRoom(UnityMultiNetworking multiNetworking)
+    public UnityMultiRoom()
+    {
+        
+    }
+
+    public void AddNetworking(UnityMultiNetworking multiNetworking)
     {
         this.multiNetworking = multiNetworking;
     }
@@ -194,28 +215,38 @@ public class UnityMultiRoom
                 SetSettings(placeholder.Settings);
                 if (Settings.SceneName != "" && Settings.SceneName != null)
                 {
-                    try
+                    if(SceneManager.GetActiveScene().name != Settings.SceneName)
                     {
-                        isSceneLoaded = false;
-                        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(Settings.SceneName);
-                        while (!asyncLoad.isDone)
+                        try
                         {
-                            await Task.Yield();
+                            isSceneLoaded = false;
+                            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(Settings.SceneName);
+                            while (!asyncLoad.isDone)
+                            {
+                                await Task.Yield();
+                            }
+                            isSceneLoaded = true;
                         }
-                        isSceneLoaded = true;      
-                    } catch (Exception e)
-                    {
-                        Debug.Log(e);
-                        Debug.Log("Unable to load scene: " + Settings.SceneName + "; Make sure the scene name is correct.");
-                        LeaveRoom();
-                        return;
-                    }
+                        catch (Exception e)
+                        {
+                            Debug.Log(e);
+                            Debug.Log("Unable to load scene: " + Settings.SceneName + "; Make sure the scene name is correct.");
+                            LeaveRoom();
+                            return;
+                        }
+                        
+                    } else { isSceneLoaded = true; }
                     if (isSceneLoaded)
                     {
                         multiNetworking.InvokeRoomE("joinRoom", Settings.SceneName);
                         foreach (var user in placeholder.UserList)
                         {
-                            AddUser(user);
+                            bool ignore = false;
+                            foreach(var userOnList in UserList)
+                            {
+                                if (user == userOnList) { ignore = true; break; }
+                            }
+                            if(!ignore) AddUser(user);
                         }
                     }
                 } else { Debug.Log("SceneName is null or equal to \"\". Auto scene load function stopped."); return; }

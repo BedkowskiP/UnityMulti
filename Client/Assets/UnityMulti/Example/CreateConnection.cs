@@ -7,6 +7,7 @@ public class CreateConnection : UnityMultiNetworkingCallbacks
     public string url = "ws://localhost:8080";
     public long ms;
     UnityMultiRoomSettings settings;
+
     void Start()
     {
         multiNetworking.Connect(url, "Betek");
@@ -21,7 +22,8 @@ public class CreateConnection : UnityMultiNetworkingCallbacks
     public override void OnClientConnected()
     {
         base.OnClientConnected();
-        //multiNetworking.room.CreateRoom(settings);
-        multiNetworking.room.JoinRoom(settings);
+        Debug.Log("Joining room");
+        multiNetworking.room.CreateRoom(settings);
+        //multiNetworking.room.JoinRoom(settings);
     }
 }
