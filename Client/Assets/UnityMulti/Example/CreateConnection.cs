@@ -23,7 +23,7 @@ public class CreateConnection : UnityMultiNetworkingCallbacks
     {
         base.OnClientConnected();
         Debug.Log("Joining room");
-        multiNetworking.room.CreateRoom(settings);
-        //multiNetworking.room.JoinRoom(settings);
+        //multiNetworking.CreateRoom(settings);
+        multiNetworking.JoinRoom(settings);
     }
 }

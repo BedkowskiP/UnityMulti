@@ -81,7 +81,7 @@ public class UnityMultiRoom : MonoBehaviour
                 loadedPrefabs.RemoveAt(i);
             }
         }
-
+        loadedPrefabs = new List<GameObject>();
     }
 
     [JsonConstructor]
@@ -163,7 +163,7 @@ public class UnityMultiRoom : MonoBehaviour
         }
         else
         {
-            Message leaveMessage = new Message(MessageType.LEAVE_ROOM, JsonConvert.SerializeObject(multiNetworking.room.Settings));
+            Message leaveMessage = new Message(MessageType.LEAVE_ROOM, JsonConvert.SerializeObject(Settings));
             multiNetworking.SendMessage(leaveMessage);
         }
     }
@@ -220,7 +220,7 @@ public class UnityMultiRoom : MonoBehaviour
                         try
                         {
                             isSceneLoaded = false;
-                            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(Settings.SceneName);
+                            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(Settings.SceneName, LoadSceneMode.Single);
                             while (!asyncLoad.isDone)
                             {
                                 await Task.Yield();
@@ -239,9 +239,10 @@ public class UnityMultiRoom : MonoBehaviour
                     if (isSceneLoaded)
                     {
                         multiNetworking.InvokeRoomE("joinRoom", Settings.SceneName);
+                        bool ignore;
                         foreach (var user in placeholder.UserList)
                         {
-                            bool ignore = false;
+                            ignore = false;
                             foreach(var userOnList in UserList)
                             {
                                 if (user == userOnList) { ignore = true; break; }
@@ -252,6 +253,7 @@ public class UnityMultiRoom : MonoBehaviour
                 } else { Debug.Log("SceneName is null or equal to \"\". Auto scene load function stopped."); return; }
             }
         }
+        return;
     }
     public void HandleLeaveRoom()
     {

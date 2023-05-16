@@ -6,26 +6,29 @@ using UnityEngine;
 public class UnityMultiObjectTransform : MonoBehaviour
 {
     private UnityMultiNetworking multiNetworking;
-    private UnityMultiObject parentObj;
+    private UnityMultiObject Obj;
 
-    public void Setup(UnityMultiNetworking multiNetworking, UnityMultiObject parentObj)
+    public void Setup(UnityMultiNetworking multiNetworking, UnityMultiObject Obj)
     {
         this.multiNetworking = multiNetworking;
-        this.parentObj = parentObj;
+        this.Obj = Obj;
     }
 
     private void Awake()
     {
-        parentObj.UpdatePosition += OnUpdatePosition;
-        parentObj.UpdateRotation += OnUpdateRotation;
-        parentObj.UpdateScale += OnUpdateScale;
+        Obj.UpdatePosition += OnUpdatePosition;
+        Obj.UpdateRotation += OnUpdateRotation;
+        Obj.UpdateScale += OnUpdateScale;
     }
 
     private void OnUpdatePosition(Vector3 oldValue, Vector3 newValue)
     {
         if(newValue != oldValue)
         {
-
+            if (Obj.IsMine())
+            {
+                
+            }
         }
     }
 

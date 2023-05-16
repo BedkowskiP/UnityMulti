@@ -12,4 +12,8 @@ public class CreateObjectOnNewScene : UnityMultiNetworkingCallbacks
         multiNetworking.InstantiatePlayerObject("TutorialBall", new Vector3(0, 0, 0), Quaternion.identity, new Vector3(1,1,1), null);
     }
 
+    public void ReloadScene()
+    {
+
+    }
 }

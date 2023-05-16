@@ -67,7 +67,7 @@ public class UnityMultiObject : MonoBehaviour
 
     public bool IsMine()
     {
-        if (Owner == multiNetworking.clientData.UserID) return true;
+        if (Owner == multiNetworking.GetUserInfo()[2]) return true;
         else return false;
     }
 
