@@ -117,7 +117,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     #endregion
 
     #region connection
-    public void Connect(string url)
+    public void ConnectToServer(string url)
     {
         startingScene = SceneManager.GetActiveScene().name;
         connectionURL = url;
@@ -125,7 +125,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         CreateConnection();
     }
 
-    public void Connect(string url, string username)
+    public void ConnectToServer(string url, string username)
     {
         startingScene = SceneManager.GetActiveScene().name;
         connectionURL = url;
@@ -152,9 +152,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             {
                 ws.CloseAsync();
             }
-        }
-
-        
+        }     
 
         ws = new WebSocket(connectionURL);
 
@@ -274,18 +272,6 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
     #region serverActions
 
-    private void setTimeStamp(long pingTimestamp)
-    {
-        this.pingTimestamp = pingTimestamp;
-    }
-
-    private void RequestValidation()
-    {
-        Message validationRequest = new Message(MessageType.VALIDATION_REQUEST, JsonConvert.SerializeObject(clientData));
-
-        SendMessage(validationRequest);
-    }
-
     private async void OnServerMessage(string message)
     {
             Message serverMessage = JsonConvert.DeserializeObject<Message>(message);
@@ -337,6 +323,19 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             }
             
     }
+
+    private void setTimeStamp(long pingTimestamp)
+    {
+        this.pingTimestamp = pingTimestamp;
+    }
+
+    private void RequestValidation()
+    {
+        Message validationRequest = new Message(MessageType.VALIDATION_REQUEST, JsonConvert.SerializeObject(clientData));
+
+        SendMessage(validationRequest);
+    }
+
     private void HandleValidation(Message serverMessage)
     {
         ValidationResult validationMessage = JsonConvert.DeserializeObject<ValidationResult>(serverMessage.Content);
@@ -378,7 +377,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     }
 
-    public async void InstantiatePlayerObject(string prefabName, Vector3 position, Quaternion rotation, Vector3 scale, GameObject parent)
+    public async void InstantiatePlayerObject(string prefabName, Vector3 position, Quaternion rotation, Vector3 scale, GameObject parent, UnityMultiUser user)
     {
         
         while (!isValidated)
@@ -397,34 +396,32 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             await Task.Yield();
         }
 
-        if (IsHost())
+        
+        GameObject tempObj = Resources.Load<GameObject>(prefabName);
+        if (tempObj == null)
         {
-            GameObject tempObj = Resources.Load<GameObject>(prefabName);
-            if (tempObj == null)
-            {
 
-                Debug.LogWarning("Couldn't load given prefab: " + prefabName);
-                Resources.UnloadUnusedAssets();
-                return;
+            Debug.LogWarning("Couldn't load given prefab: " + prefabName);
+            Resources.UnloadUnusedAssets();
+            return;
+        }
+        else
+        {
+
+            UnityMultiObject mulitObjTemp = tempObj.GetComponent<UnityMultiObject>();
+            if (mulitObjTemp == null)
+            {
+                Debug.LogWarning("Prefab '" + prefabName + "' don't have the <UnityMultiObject> component. Please add the component to the prefab before you try to instantiate it.");
             }
             else
             {
 
-                UnityMultiObject mulitObjTemp = tempObj.GetComponent<UnityMultiObject>();
-                if (mulitObjTemp == null)
-                {
-                    Debug.LogWarning("Prefab '" + prefabName + "' don't have the <UnityMultiObject> component. Please add the component to the prefab before you try to instantiate it.");
-                }
-                else
-                {
-
-                    UnityMultiObjectInfo temp = new UnityMultiObjectInfo(prefabName, position, rotation, scale, parent);
-                    Message objectMessage = new Message(MessageType.ADD_UNITY_OBJECT, JsonConvert.SerializeObject(temp));
-                    SendMessage(objectMessage);
-                }
-                Resources.UnloadUnusedAssets();
-                return;
+                UnityMultiObjectInfo temp = new UnityMultiObjectInfo(prefabName, position, rotation, scale, parent, user.UserID);
+                Message objectMessage = new Message(MessageType.ADD_UNITY_OBJECT, JsonConvert.SerializeObject(temp));
+                SendMessage(objectMessage);
             }
+            Resources.UnloadUnusedAssets();
+            return;
         }
     }
 

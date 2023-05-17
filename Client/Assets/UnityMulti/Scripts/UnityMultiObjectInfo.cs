@@ -7,7 +7,7 @@ using UnityEngine;
 [System.Serializable]
 public class UnityMultiObjectInfo
 {
-    public UnityMultiObjectInfo(string prefabName, Vector3 position, Quaternion rotation, Vector3 scale, GameObject parent)
+    public UnityMultiObjectInfo(string prefabName, Vector3 position, Quaternion rotation, Vector3 scale, GameObject parent, string OwnerID)
     {
         this.PrefabName = prefabName;
         this.Position = new ObjVec3(position);
@@ -15,6 +15,7 @@ public class UnityMultiObjectInfo
         this.Scale = new ObjVec3(scale);
         if (parent == null) this.ParentObject = null;
         else this.ParentObject = parent.name;
+        this.Owner = OwnerID;
     }
 
     [JsonConstructor]

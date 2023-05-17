@@ -14,7 +14,6 @@ public class UnityMultiRoomSettings
     public int MaxPlayers { get; private set; } = 10;
     public string HostID { get; private set; }
     public string SceneName { get; private set; } = "";
-
     public UnityMultiRoomSettings(string RoomName, string Password, string SceneName)
     {
         this.RoomName = RoomName;
@@ -100,6 +99,20 @@ public class UnityMultiRoom : MonoBehaviour
     public void AddNetworking(UnityMultiNetworking multiNetworking)
     {
         this.multiNetworking = multiNetworking;
+    }
+
+    public UnityMultiUser FindUser(string username)
+    {
+        if (UserList.Count > 0)
+        {
+            for (int i = 0; i < UserList.Count; i++)
+            {
+                if (UserList[i].Username == username)
+                    return UserList[i];
+            }
+        }
+
+        return null;
     }
 
     public void AddUser(UnityMultiUser newUser)
