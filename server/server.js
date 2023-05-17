@@ -4,9 +4,12 @@ const messageTypes = require('./App/messageTypes');
 const DB = require('./App/database');
 const roomsMan = require('./App/roomsManager');
 const usersMan = require('./App/usersManager');
+const tester = require('./App/Test')
+
+
 
 const DEBUGMODE= true;   //shows incoming msgs
-const TESTMODE = true;   //generate local users
+const TESTMODE = false;   //generate local users
 const server = new WebSocket.Server({
   host: 'localhost',
   port: 8080
@@ -23,33 +26,26 @@ const UsersLoop = async () => {
   while(true){
     for (const key in usersMan.Users) 
       console.log("Users connected ID: ",usersMan.Users[key].id);
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await new Promise(resolve => setTimeout(resolve, 1000));
   }
 };
 
 const RoomLoop = async () => {
   while(true){  
-    for (const name in roomsMan.Rooms)console.log("Rooms created with name: ",roomsMan.Rooms[name].name);
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    for (const name in roomsMan.Rooms)console.log("Rooms created with name: ",roomsMan.Rooms[name].name,": Users - ",JSON.stringify(roomsMan.Rooms[name].users));
+    await new Promise(resolve => setTimeout(resolve, 1000));
   }
 };
-const UserInRoomLoop = async () => {
-  while(true){  
-      console.log("List of Users in rooms: ",roomsMan.UserInRoom);
 
-    await new Promise(resolve => setTimeout(resolve, 5000));
-  }
-};
 process.argv.forEach(function (val, index) {
   if(index==2&&val=="remote");
 });
 
 
 
-//UsersLoop();
-//RoomLoop();
+UsersLoop();
+RoomLoop();
 //db.Connect();
-//UserInRoomLoop();
 //console.log(db.Query("select * from user"));
 
 
@@ -74,7 +70,7 @@ server.on('connection', (socket) => {
 });
 const Disconnect =  async (UserID)=>
 {
-  await roomsMan.RemoveUserFromRoom(await roomsMan.GetUserRoomname(UserID),UserID)
+  await roomsMan.RemoveUserFromRoom(UserID)
   await usersMan.RemoveUser(UserID);
 }
 const HandleMessage = async (socket, message) => { 
@@ -154,278 +150,70 @@ const HandleMessage = async (socket, message) => {
 };
 //Ghost object to test locally
 //adding users and createing
-if(TESTMODE)
-{
-  let Content = {
-    Username:"betek",
-    Password:null,
-    UserID:null
-  }
-  let message = 
-      {
-        Type: messageTypes.REQVALIDATION,
-        Content : JSON.stringify(Content),
-        Timestamp: Date.now(),
-        UserID : null
-      };
-  const TesterValid = async (message) =>
-  {
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    await HandleMessage(null,message);
-    
-  }
-  TesterValid(JSON.stringify(message));
-  TesterValid(JSON.stringify(message));
 
 
-  //create room
 
-  const TesterCreate = async () =>
-  {
-    
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    let Content2 = {
-      RoomName:'Room1',
-      Password:null,
-      IsPublic:true,
-      MaxPlayers:10,
-      SceneName:"Default"
-    }
-    
-    let message2 = 
-        {
-          Type: messageTypes.CREATEROOM,
-          Content : JSON.stringify(Content2),
-          Timestamp: Date.now(),
-          UserID : Object.keys(usersMan.Users)[0]
-        };
-    await HandleMessage(null,JSON.stringify(message2));
-    
-  }
-  TesterCreate()
 
-  //join room
-
-
-
-  const Tester = async (message) =>
-  {
-    await new Promise(resolve => setTimeout(resolve, 4000));
-    Content = {
-      RoomName:'Room1',
-      Password:null
-    }
-    
-    message = 
-        {
-          Type: messageTypes.JOINROOM,
-          Content : JSON.stringify(Content),
-          Timestamp: Date.now(),
-          UserID : Object.keys(usersMan.Users)[1]
-        };
-    
-    await HandleMessage(null,JSON.stringify(message));
-    
-  }
-
-
-
-  Tester();
-  const Tester3 = async ( message) =>
-  { 
-      await new Promise(resolve => setTimeout(resolve, 6000));
-      Content = {
-        UserID:Object.keys(usersMan.Users)[1]
-      }
-      message = 
-        {
-          Type: messageTypes.HOSTCHANGE,
-          Content : JSON.stringify(Content),
-          Timestamp: Date.now(),
-          UserID : Object.keys(usersMan.Users)[0]
-        };
-      await HandleMessage(null,JSON.stringify(message));
-  }
-  Tester3();
-
-  const Tester4 = async ( message) =>
-  {
-    
-    await new Promise(resolve => setTimeout(resolve, 7000));
-    Content = {
-      PrefabName:'FabA',
-      Position:{x:"1",y:"2",z:"6"},
-      Rotation:{x:"1",y:"4",z:"5",w:"7"},
-      Scale:{x:"11",y:"3",z:"2"},
-      Owner:null
-    }
-    
-    message = 
-        {
-          Type: messageTypes.UNITYOBJECT,
-          Content : JSON.stringify(Content),
-          Timestamp: Date.now(),
-          UserID : Object.keys(usersMan.Users)[1]
-        };
-      HandleMessage(null,JSON.stringify(message));
-      
-      await new Promise(resolve => setTimeout(resolve, 1));
-    
-    message = 
-        {
-          Type: messageTypes.UNITYOBJECT,
-          Content : JSON.stringify(Content),
-          Timestamp: Date.now(),
-          UserID : Object.keys(usersMan.Users)[1]
-        };
-    
-    HandleMessage(null,JSON.stringify(message));
-    
-  }
-
-
-  Tester4();
-
-
-
-
-
-  const Tester5 = async ( message) =>
-  {
-    
-    await new Promise(resolve => setTimeout(resolve, 8000));
-    Content = {
-      SceneName:'Scene2' 
-    }
-    
-    message = 
-        {
-          Type: messageTypes.SCENECHANGE,
-          Content : JSON.stringify(Content),
-          Timestamp: Date.now(),
-          UserID : Object.keys(usersMan.Users)[1]
-        };
-      HandleMessage(null,JSON.stringify(message));
-      await new Promise(resolve => setTimeout(resolve, 500));
-    Content = {
-      SceneName:'Scene3' 
-    }
-    
-    message = 
-        {
-          Type: messageTypes.SCENECHANGE,
-          Content : JSON.stringify(Content),
-          Timestamp: Date.now(),
-          UserID : Object.keys(usersMan.Users)[0]
-        };
-      HandleMessage(null,JSON.stringify(message));
-    
-  }
-
-
-
-
-
-
-
-
-
-
-  //Tester5((message));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  //leave room
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  const Tester2 = async ( message) =>
-  {
-    
-    await new Promise(resolve => setTimeout(resolve, 7000));
-    Content = {
-      RoomName:'Room1' 
-    }
-    
-    message = 
-        {
-          Type: messageTypes.LEAVEROOM,
-          Content : JSON.stringify(Content),
-          Timestamp: Date.now(),
-          UserID : Object.keys(usersMan.Users)[1]
-        };
-      HandleMessage(null,JSON.stringify(message));
-      
-      await new Promise(resolve => setTimeout(resolve, 1));
-    
-    message = 
-        {
-          Type: messageTypes.LEAVEROOM,
-          Content : JSON.stringify(Content),
-          Timestamp: Date.now(),
-          UserID : Object.keys(usersMan.Users)[0]
-        };
-    
-    HandleMessage(null,JSON.stringify(message));
-    
-  }
-
-
-
-
-
-
-
-
-
-
-  //Tester2((message));
-
-
+async function waitAndDoSomething() {
+  let waiter=1000;
+
+
+  let Content = {Username:"betek",Password:null, UserID:null}
+  let msg = {Type:messageTypes.REQVALIDATION, Content:JSON.stringify(Content),      Timestamp:Date.now(),      UserID:null};
+  HandleMessage(null,JSON.stringify(msg));
+  await new Promise(resolve => setTimeout(resolve, waiter));
+
+  Content = {Username:"betek2",Password:null, UserID:null}
+  msg =     {Type:messageTypes.REQVALIDATION, Content:JSON.stringify(Content),      Timestamp:Date.now(),      UserID:null};
+  HandleMessage(null,JSON.stringify(msg));
+  await new Promise(resolve => setTimeout(resolve, waiter));
+
+  Content = {RoomName:'Room1',Password:null,IsPublic:true,MaxPlayers:10,SceneName:"Default"}
+  msg =     {Type: messageTypes.CREATEROOM,   Content : JSON.stringify(Content),Timestamp: Date.now(),UserID :  Object.keys(usersMan.Users)[0]};
+  HandleMessage(null,JSON.stringify(msg));
+  await new Promise(resolve => setTimeout(resolve, waiter));
+
+  Content = {RoomName:'Room1'}
+  msg =     {Type: messageTypes.JOINROOM,     Content : JSON.stringify(Content),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[1]};
+  HandleMessage(null,JSON.stringify(msg));
+  await new Promise(resolve => setTimeout(resolve, waiter));
+/*
+  Content = {UserID:Object.keys(usersMan.Users)[1]}
+  msg =     {Type: messageTypes.HOSTCHANGE,   Content : JSON.stringify(Content),Timestamp: Date.now(),UserID : Object.keys(usersMan.Users)[0]};
+  HandleMessage(null,JSON.stringify(msg));
+  await new Promise(resolve => setTimeout(resolve, waiter));
+  
+  Content = {PrefabName:'FabA',Position:{x:"1",y:"2",z:"6"},Rotation:{x:"1",y:"4",z:"5",w:"7"},Scale:{x:"11",y:"3",z:"2"},Owner:null }
+  msg =     {Type: messageTypes.UNITYOBJECT,  Content : JSON.stringify(Content),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[0] };
+  HandleMessage(null,JSON.stringify(msg));
+  await new Promise(resolve => setTimeout(resolve, waiter));
+
+  Content = {PrefabName:'FabA',Position:{x:"1",y:"2",z:"6"},Rotation:{x:"1",y:"4",z:"5",w:"7"},Scale:{x:"11",y:"3",z:"2"},Owner:null }
+  msg =     {Type: messageTypes.UNITYOBJECT,  Content : JSON.stringify(Content),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[1] };
+  HandleMessage(null,JSON.stringify(msg));
+  await new Promise(resolve => setTimeout(resolve, waiter));
+  */
+/*
+  Content = {SceneName:'Scene2'}
+  msg =     {Type: messageTypes.SCENECHANGE,  Content : JSON.stringify(Content),Timestamp: Date.now(),UserID : Object.keys(usersMan.Users)[1]};
+  HandleMessage(null,JSON.stringify(msg));
+  await new Promise(resolve => setTimeout(resolve, waiter));
+
+  Content = {SceneName:'Scene2'}
+  msg =     {Type: messageTypes.SCENECHANGE,  Content : JSON.stringify(Content),Timestamp: Date.now(),UserID : Object.keys(usersMan.Users)[0]};
+  HandleMessage(null,JSON.stringify(msg));
+  await new Promise(resolve => setTimeout(resolve, waiter));
+*/
+  Content = {RoomName:'Room1' }
+  msg =     {Type: messageTypes.LEAVEROOM,    Content : JSON.stringify(Content),Timestamp: Date.now(),UserID : Object.keys(usersMan.Users)[1]};
+  HandleMessage(null,JSON.stringify(msg));
+  await new Promise(resolve => setTimeout(resolve, waiter));
+
+  Content = {RoomName:'Room1' }
+  msg =     {Type: messageTypes.LEAVEROOM,    Content : JSON.stringify(Content),Timestamp: Date.now(),UserID : Object.keys(usersMan.Users)[0]};
+  HandleMessage(null,JSON.stringify(msg));
+  await new Promise(resolve => setTimeout(resolve, waiter));
   
 }
+
+if(TESTMODE)waitAndDoSomething()

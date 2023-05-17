@@ -269,6 +269,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     private void OnServerMessage(string message)
     {
             Message serverMessage = JsonConvert.DeserializeObject<Message>(message);
+            Debug.Log(serverMessage.Type);
             switch (serverMessage.Type)
             {
                 case MessageType.PONG:
@@ -303,6 +304,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
                     serverMessage = null;
                     break;
                 case MessageType.ADD_UNITY_OBJECT_RESPONSE:
+                    
                     InstantiateNewObject(serverMessage);
                     serverMessage = null;
                     break;

@@ -8,7 +8,7 @@ const CreateMsg =  (type,cont,err,log) =>
         Timestamp: Date.now()
     }
     
-    if(log)console.log("msg from server: ",result)
+    if(log)console.log("msg from server: ",{Type : type,Content : cont,ErrorCode : err,Timestamp: Date.now()})
     return result
 }
 
