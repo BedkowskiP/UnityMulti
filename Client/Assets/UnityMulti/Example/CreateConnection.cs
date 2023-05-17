@@ -8,10 +8,9 @@ public class CreateConnection : UnityMultiNetworkingCallbacks
     public long ms;
     UnityMultiRoomSettings settings;
 
+public string username;
     void Start()
     {
-        multiNetworking.Connect(url, "Betek");
-        settings = new UnityMultiRoomSettings(RoomName: "RoomNames", Password:"", SceneName:"TutorialSceneTwo");
     }
 
     void Update()
@@ -24,6 +23,18 @@ public class CreateConnection : UnityMultiNetworkingCallbacks
         base.OnClientConnected();
         Debug.Log("Joining room");
         //multiNetworking.CreateRoom(settings);
-        multiNetworking.JoinRoom(settings);
+        
+    }
+    void OnGUI() {
+        if (GUILayout.Button("connect"))
+        {
+            multiNetworking.Connect(url, username);
+            settings = new UnityMultiRoomSettings(RoomName: "RoomNames", Password:"", SceneName:"TutorialSceneTwo");
+        }
+        if (GUILayout.Button("create"))multiNetworking.CreateRoom(settings);
+        if (GUILayout.Button("join"))multiNetworking.JoinRoom(settings);
+        
+        
+        
     }
 }

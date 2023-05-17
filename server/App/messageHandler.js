@@ -76,15 +76,34 @@ const HandleJoinRoom = async (socket,jsonmsg) =>
     };
     let msg = JSON.stringify(MSG.CreateMsg(messageTypes.RESJOINROOM,jsonContent,isErrorCode,DEBUGMODE))
     socket?.send(msg);
+    const LIST = {...roomsMan.Rooms[content.RoomName].objectList};
+    if(isErrorCode===0&&LIST.length!=0)
+    {
+        for (const key in LIST)
+        {
+            //console.log(LIST[key])
+            jsonContent = 
+            {
+                PrefabName:LIST[key].prefab,                  
+                ObjectID:key,
+                Position:LIST[key].pos,
+                Rotation:LIST[key].rot,
+                Scale:LIST[key].sca,
+                Owner:LIST[key].owner
+            }
+            msg = JSON.stringify((MSG.CreateMsg(messageTypes.UNITYOBJECTRES,jsonContent,isErrorCode,1)))
+            socket?.send(msg);
+        }
+    }
     //broadcast to users in room
     jsonContent =
     {
         UserID : jsonmsg.UserID,
         Username : usersMan.Users[jsonmsg.UserID].name
     }
-    msg = JSON.stringify((MSG.CreateMsg(messageTypes.USERJOIN,jsonContent,isErrorCode,DEBUGMODE)))
+    msg = JSON.stringify((MSG.CreateMsg(messageTypes.USERJOIN,jsonContent,isErrorCode,DEBUGMODE,true)))
     
-    roomsMan.BroadcastMsgToUsersInRoom(content.RoomName,msg,jsonmsg.UserID,usersMan.Users);
+    roomsMan.BroadcastMsgToUsersInRoom(content.RoomName,msg,jsonmsg.UserID,usersMan.Users,true);
 }
 
 const HandleLeaveRoom = async (socket,jsonmsg) =>
@@ -105,8 +124,8 @@ const HandleLeaveRoom = async (socket,jsonmsg) =>
         UserID : jsonmsg.UserID,
         Username : usersMan.Users[jsonmsg.UserID].name
       }
-      let msg = JSON.stringify((MSG.CreateMsg(messageTypes.USERLEAVE,jsonContent,isErrorCode,DEBUGMODE)))
-      roomsMan.BroadcastMsgToUsersInRoom(content.RoomName,msg,jsonmsg.UserID,usersMan.Users);
+      let msg = JSON.stringify((MSG.CreateMsg(messageTypes.USERLEAVE,jsonContent,isErrorCode,DEBUGMODE,true)))
+      roomsMan.BroadcastMsgToUsersInRoom(content.RoomName,msg,jsonmsg.UserID,usersMan.Users,true);
   }
   let msg = JSON.stringify(MSG.CreateMsg(messageTypes.RESLEAVEROOM,jsonContent,isErrorCode,DEBUGMODE))
   socket?.send(msg);
@@ -131,17 +150,21 @@ const HandleObjectUnity = async (socket,MsgRecvived) =>
     const RoomName = await usersMan.Users[MsgRecvived.UserID].inRoom;
     const reuslt=roomsMan.Rooms[RoomName].AddObject(content,MsgRecvived.UserID)
     isErrorCode=reuslt.ErrorCode;
-    let jsonContent =
+    if(isErrorCode==0)
     {
-        PrefabName:content.PrefabName,                  
-        ObjectID:reuslt.ObjectID,
-        Position:{X:content.Position.x,   Y:content.Position.y,     Z:content.Position.z},
-        Rotation:{X:content.Rotation.x,   Y:content.Rotation.y,     Z:content.Rotation.z,     W:content.Rotation.w},
-        Scale:{X:content.Scale.x,     Y:content.Scale.y,    Z:content.Scale.z},
-        Owner:MsgRecvived.UserID
-    };
-    let msg = JSON.stringify((MSG.CreateMsg(messageTypes.UNITYOBJECTRES,jsonContent,isErrorCode,1)))
-    roomsMan.BroadcastMsgToUsersInRoom(RoomName,msg,null,usersMan.Users);//changed except from jsonmsg.UserID-> null
+        let jsonContent =
+        {
+            PrefabName:content.PrefabName,                  
+            ObjectID:reuslt.ObjectID,
+            Position:{X:content.Position.x,   Y:content.Position.y,     Z:content.Position.z},
+            Rotation:{X:content.Rotation.x,   Y:content.Rotation.y,     Z:content.Rotation.z,     W:content.Rotation.w},
+            Scale:{X:content.Scale.x,     Y:content.Scale.y,    Z:content.Scale.z},
+            Owner:MsgRecvived.content.Owner
+        };
+
+        let msg = JSON.stringify((MSG.CreateMsg(messageTypes.UNITYOBJECTRES,jsonContent,isErrorCode,1)))
+        roomsMan.BroadcastMsgToUsersInRoom(RoomName,msg,null,usersMan.Users,true,true);//changed except from jsonmsg.UserID-> null
+    }
 }
 const HandleSceneChange  = async (socket,MsgRecvived) =>
 {

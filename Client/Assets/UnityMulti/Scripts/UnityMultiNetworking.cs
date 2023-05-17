@@ -399,7 +399,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             await Task.Yield();
         }
 
-        if (IsHost())
+        //if (IsHost())
         {
             GameObject tempObj = Resources.Load<GameObject>(prefabName);
             if (tempObj == null)

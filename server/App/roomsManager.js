@@ -10,10 +10,11 @@ const BroadcastMsgToUsersInRoom = async (RoomName,msg,except,Users) =>
         const ID = users[key].UserID;
         if(ID!=except){
             usersMan.Users[ID]?.socket?.send(msg);
-            console.log(msg,'\x1b[36m sent to',usersMan.Users[ID].id);
+            console.log(msg,'\x1b[36m sent to',usersMan.Users[ID].id,'\x1b[0m');
         }
     }
 }
+
 const AddRoom = async (content,UserID) =>
 {
     const room = new Room(content.RoomName,UserID,content.Password,content.IsPublic,content.MaxPlayers,content.SceneName)
@@ -21,9 +22,7 @@ const AddRoom = async (content,UserID) =>
 }
 const AddUserToRoom = async (RoomName,userID,username) =>
 {
-    console.log(usersMan.Users[userID].inRoom)
     usersMan.Users[userID].inRoom = RoomName
-    console.log(usersMan.Users[userID].inRoom)
     Rooms[RoomName].users={  UserID: userID,Username: username };
 }
 const RemoveUserFromRoom = async (UserID) =>
@@ -57,7 +56,7 @@ const DeleteRoom = async (RoomName,ERR) =>
 }
 const OnDeletRoom =async (RoomName,ERR)=>
 {
-    const msg = JSON.stringify((MSG.CreateMsg("responseHostChange",{},ERR,false)))
+    const msg = JSON.stringify((MSG.CreateMsg("responseHostChange",{},ERR,false,true)))
     BroadcastMsgToUsersInRoom(RoomName,msg,null,usersMan.Users)
 }
 const ChooseNewHost = async (RoomName) =>
@@ -94,6 +93,7 @@ class Room
     get host(){return this._host;}
 
     get sceneName(){return this._sceneName;}
+    get objectList(){return this._objectList;}
 
     set name(NAME){this._name=NAME}
 
@@ -102,7 +102,7 @@ class Room
         if(typeof USER === "object")
         {
             this._users.push(USER) 
-            //OnUserJoin()
+            
         }
         else if (typeof USER ==="number")
         {
@@ -123,7 +123,12 @@ class Room
     }   
     //set sceneName(SCENENAME){this._sceneName=SCENENAME}
     
-
+    OnUserJoin()
+    {
+        const LIST = {...this._objectList};//hollow copy to prevent async errors
+        console.log(LIST)
+        /// sending list of objects 
+    }
     onHostChange(NEWHOST)
     {
         console.log("changing host from : ",this.host,"->", NEWHOST)
@@ -131,7 +136,7 @@ class Room
         {
             UserID : NEWHOST
         }
-        const msg = JSON.stringify((MSG.CreateMsg("responseHostChange",jsonContent,0,false)))
+        const msg = JSON.stringify((MSG.CreateMsg("responseHostChange",jsonContent,0,false,true)))
         BroadcastMsgToUsersInRoom(this._name,msg,null,usersMan.Users)
     }
     
@@ -152,7 +157,7 @@ class Room
         {
             SceneName : SCENE
         }
-        const msg = JSON.stringify((MSG.CreateMsg("responseSceneChange",jsonContent,0,false)))
+        const msg = JSON.stringify((MSG.CreateMsg("responseSceneChange",jsonContent,0,false,true)))
         BroadcastMsgToUsersInRoom(this._name,msg,null,usersMan.Users)
     }
     ///
@@ -165,7 +170,7 @@ class Room
         
         if(OWNER!=this._host)
         {  
-            return {ErrorCode:208,ObjectID:null};
+            return {ErrorCode:208,ObjectID:null};//not a host
         }
         else 
         { 
@@ -196,7 +201,7 @@ class ObjectUnity
             this.x=X
             this.y=Y
             this.z=Z
-            this.z=W
+            this.w=W
         }
     }
     static ScaleUnity = class
@@ -217,6 +222,7 @@ class ObjectUnity
         this._owner=OWNER;
         this._prefab = PREFAB;
     }
+    
     get pos()
     {
         return {x:this._pos.x,  y:this._pos.y,  z:this._pos.z}
@@ -229,8 +235,15 @@ class ObjectUnity
     {
         return {x:this._sca.x,  y:this._sca.y,  z:this._sca.z}
     }
-
+    get prefab()
+    {
+        return this._prefab
+    }
     
+    get owner()
+    {
+        return this._owner
+    }
     
     
     

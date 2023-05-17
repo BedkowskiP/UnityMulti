@@ -43,8 +43,8 @@ process.argv.forEach(function (val, index) {
 
 
 
-UsersLoop();
-RoomLoop();
+//UsersLoop();
+//RoomLoop();
 //db.Connect();
 //console.log(db.Query("select * from user"));
 
@@ -173,6 +173,11 @@ async function waitAndDoSomething() {
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
 
+  Content = {PrefabName:'FabA',Position:{x:"1",y:"2",z:"6"},Rotation:{x:"1",y:"4",z:"5",w:"7"},Scale:{x:"11",y:"3",z:"2"},Owner:null }
+  msg =     {Type: messageTypes.UNITYOBJECT,  Content : JSON.stringify(Content),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[0] };
+  HandleMessage(null,JSON.stringify(msg));
+  await new Promise(resolve => setTimeout(resolve, waiter));
+
   Content = {RoomName:'Room1'}
   msg =     {Type: messageTypes.JOINROOM,     Content : JSON.stringify(Content),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[1]};
   HandleMessage(null,JSON.stringify(msg));
@@ -182,17 +187,14 @@ async function waitAndDoSomething() {
   msg =     {Type: messageTypes.HOSTCHANGE,   Content : JSON.stringify(Content),Timestamp: Date.now(),UserID : Object.keys(usersMan.Users)[0]};
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
+  */
   
-  Content = {PrefabName:'FabA',Position:{x:"1",y:"2",z:"6"},Rotation:{x:"1",y:"4",z:"5",w:"7"},Scale:{x:"11",y:"3",z:"2"},Owner:null }
-  msg =     {Type: messageTypes.UNITYOBJECT,  Content : JSON.stringify(Content),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[0] };
-  HandleMessage(null,JSON.stringify(msg));
-  await new Promise(resolve => setTimeout(resolve, waiter));
 
   Content = {PrefabName:'FabA',Position:{x:"1",y:"2",z:"6"},Rotation:{x:"1",y:"4",z:"5",w:"7"},Scale:{x:"11",y:"3",z:"2"},Owner:null }
   msg =     {Type: messageTypes.UNITYOBJECT,  Content : JSON.stringify(Content),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[1] };
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
-  */
+  
 /*
   Content = {SceneName:'Scene2'}
   msg =     {Type: messageTypes.SCENECHANGE,  Content : JSON.stringify(Content),Timestamp: Date.now(),UserID : Object.keys(usersMan.Users)[1]};
@@ -203,7 +205,7 @@ async function waitAndDoSomething() {
   msg =     {Type: messageTypes.SCENECHANGE,  Content : JSON.stringify(Content),Timestamp: Date.now(),UserID : Object.keys(usersMan.Users)[0]};
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
-*/
+
   Content = {RoomName:'Room1' }
   msg =     {Type: messageTypes.LEAVEROOM,    Content : JSON.stringify(Content),Timestamp: Date.now(),UserID : Object.keys(usersMan.Users)[1]};
   HandleMessage(null,JSON.stringify(msg));
@@ -213,7 +215,7 @@ async function waitAndDoSomething() {
   msg =     {Type: messageTypes.LEAVEROOM,    Content : JSON.stringify(Content),Timestamp: Date.now(),UserID : Object.keys(usersMan.Users)[0]};
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
-  
+  */
 }
 
 if(TESTMODE)waitAndDoSomething()
