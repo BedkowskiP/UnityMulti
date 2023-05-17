@@ -37,3 +37,12 @@
 + Updated Graph https://app.diagrams.net/#G1is5-DjVXsUrZb5-UX4Bqe01X9VJEw_0H
 + Added SceneCHange msg and response
 + Fixed Small stuff
+
+
+1.5.x
+
+
+- remove user from room userlist
+- impelment onuserjoin
+- implenet onuserleave
+- addparebt object to objecyunity

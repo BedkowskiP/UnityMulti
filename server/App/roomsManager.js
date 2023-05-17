@@ -2,16 +2,19 @@ const usersMan = require("./usersManager");
 const MSG = require('./message')
 
 let Rooms ={}; // Room objects
-let UserInRoom ={}// id:roomname
 
 const BroadcastMsgToUsersInRoom = async (RoomName,msg,except,Users) =>
 {
     const users = {...Rooms[RoomName].users};//hollow copy to prevent async errors
     for (const key in users) {
         const ID = users[key].UserID;
-        if(ID!=except){usersMan.Users[ID]?.socket?.send(msg);console.log(msg,'sent to',usersMan.Users[ID].id);}
+        if(ID!=except){
+            usersMan.Users[ID]?.socket?.send(msg);
+            console.log(msg,'\x1b[36m sent to',usersMan.Users[ID].id,'\x1b[0m');
+        }
     }
 }
+
 const AddRoom = async (content,UserID) =>
 {
     const room = new Room(content.RoomName,UserID,content.Password,content.IsPublic,content.MaxPlayers,content.SceneName)
@@ -19,16 +22,17 @@ const AddRoom = async (content,UserID) =>
 }
 const AddUserToRoom = async (RoomName,userID,username) =>
 {
-    UserInRoom[userID]=RoomName;      
+    usersMan.Users[userID].inRoom = RoomName
     Rooms[RoomName].users={  UserID: userID,Username: username };
 }
-const RemoveUserFromRoom = async (RoomName,UserID) =>
+const RemoveUserFromRoom = async (UserID) =>
 {
+    
+    const RoomName = usersMan.Users[UserID].inRoom;
+
     if(RoomName!=null)
     {
-        //console.log("removing "+ UserID+" from room: "+RoomName);
-        delete UserInRoom[UserID] //user left but still users inside
-        //Rooms[RoomName].users = Rooms[RoomName].users.filter(item => item.UserID !== UserID); //filtering userlist array to includes element != userid
+        usersMan.Users[UserID].inRoom=null;
         Rooms[RoomName].users = Rooms[RoomName].users.findIndex(user => user.UserID === UserID);
         if(Object.keys(Rooms[RoomName].users).length <= 0)
         {
@@ -40,11 +44,7 @@ const RemoveUserFromRoom = async (RoomName,UserID) =>
 
 
 }
-const GetUserRoomname =  async  (userID) =>
-{
-    if(UserInRoom[userID] === undefined)return null
-    else return UserInRoom[userID]
-}
+
 
 const DeleteRoom = async (RoomName,ERR) =>
 {
@@ -56,7 +56,7 @@ const DeleteRoom = async (RoomName,ERR) =>
 }
 const OnDeletRoom =async (RoomName,ERR)=>
 {
-    const msg = JSON.stringify((MSG.CreateMsg("responseHostChange",{},ERR,false)))
+    const msg = JSON.stringify((MSG.CreateMsg("responseHostChange",{},ERR,false,true)))
     BroadcastMsgToUsersInRoom(RoomName,msg,null,usersMan.Users)
 }
 const ChooseNewHost = async (RoomName) =>
@@ -93,6 +93,7 @@ class Room
     get host(){return this._host;}
 
     get sceneName(){return this._sceneName;}
+    get objectList(){return this._objectList;}
 
     set name(NAME){this._name=NAME}
 
@@ -101,10 +102,12 @@ class Room
         if(typeof USER === "object")
         {
             this._users.push(USER) 
+            
         }
         else if (typeof USER ==="number")
         {
             this._users.splice(USER,1)
+            //OnUserLeave()
             //REMOVE OBJECTS ON USER LEAVE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         }  
     }
@@ -120,7 +123,12 @@ class Room
     }   
     //set sceneName(SCENENAME){this._sceneName=SCENENAME}
     
-
+    OnUserJoin()
+    {
+        const LIST = {...this._objectList};//hollow copy to prevent async errors
+        console.log(LIST)
+        /// sending list of objects 
+    }
     onHostChange(NEWHOST)
     {
         console.log("changing host from : ",this.host,"->", NEWHOST)
@@ -128,7 +136,7 @@ class Room
         {
             UserID : NEWHOST
         }
-        const msg = JSON.stringify((MSG.CreateMsg("responseHostChange",jsonContent,0,false)))
+        const msg = JSON.stringify((MSG.CreateMsg("responseHostChange",jsonContent,0,false,true)))
         BroadcastMsgToUsersInRoom(this._name,msg,null,usersMan.Users)
     }
     
@@ -140,7 +148,7 @@ class Room
             this.onSceneChange(SCENE);
             return 0;
         }
-        else{return 207}//Didnt change scene beacuse no HOST privilage 
+        else{return {ErrorCode:207}}//Didnt change scene beacuse no HOST privilage 
     }
     onSceneChange(SCENE)
     {
@@ -149,7 +157,7 @@ class Room
         {
             SceneName : SCENE
         }
-        const msg = JSON.stringify((MSG.CreateMsg("responseSceneChange",jsonContent,0,false)))
+        const msg = JSON.stringify((MSG.CreateMsg("responseSceneChange",jsonContent,0,false,true)))
         BroadcastMsgToUsersInRoom(this._name,msg,null,usersMan.Users)
     }
     ///
@@ -159,18 +167,19 @@ class Room
     GetObjectFromList(){return this._objectList}
     AddObject(CONTENT,OWNER)
     {
-        let OBJECT=new ObjectUnity
-        (
-            CONTENT.PrefabName,OWNER,
-            CONTENT.PosX,CONTENT.PosY,CONTENT.PosZ,
-            CONTENT.RotX,CONTENT.RotY,CONTENT.RotZ,CONTENT.RotW,
-            CONTENT.ScalX,CONTENT.ScalY,CONTENT.ScalZ
-        );
-        this._objectList[this._objectNum++]=OBJECT
-        console.log("Added",OBJECT)
-        if(false){}//problem
-        else {
-            return {ErrorCode:0,ObjectID:this._objectNum-1};}
+        
+        if(OWNER!=this._host)
+        {  
+            return {ErrorCode:208,ObjectID:null};//not a host
+        }
+        else 
+        { 
+            let OBJECT=new ObjectUnity(CONTENT.PrefabName,  OWNER,  CONTENT.Position,   CONTENT.Rotation,   CONTENT.Scale);
+            this._objectList[this._objectNum++]=OBJECT
+            console.log("Added",OBJECT)                 
+            return {ErrorCode:0,ObjectID:this._objectNum-1};
+        }
+            
     }
 }
 
@@ -183,9 +192,7 @@ class ObjectUnity
             this.x=X
             this.y=Y
             this.z=Z
-        }
-
-        
+        } 
     }
     static RotationUnity = class
     {
@@ -194,7 +201,7 @@ class ObjectUnity
             this.x=X
             this.y=Y
             this.z=Z
-            this.z=W
+            this.w=W
         }
     }
     static ScaleUnity = class
@@ -207,14 +214,15 @@ class ObjectUnity
         }
         
     }
-    constructor(PREFAB,OWNER,POSX,POSY,POSZ,ROTX,ROTY,ROTZ,ROTW,SCAX,SCAY,SCAZ)
+    constructor(PREFAB,OWNER,POS,ROT,SCA)
     {
-        this._pos=new ObjectUnity.PositionUnity(POSX,POSY,POSZ)
-        this._rot=new ObjectUnity.RotationUnity(ROTX,ROTY,ROTZ,ROTW)
-        this._sca=new ObjectUnity.ScaleUnity(SCAX,SCAY,SCAZ)
+        this._pos=new ObjectUnity.PositionUnity(POS.x,POS.y,POS.z)
+        this._rot=new ObjectUnity.RotationUnity(ROT.x,ROT.y,ROT.z,ROT.w)
+        this._sca=new ObjectUnity.ScaleUnity(SCA.x,SCA.y,SCA.z)
         this._owner=OWNER;
         this._prefab = PREFAB;
     }
+    
     get pos()
     {
         return {x:this._pos.x,  y:this._pos.y,  z:this._pos.z}
@@ -227,14 +235,21 @@ class ObjectUnity
     {
         return {x:this._sca.x,  y:this._sca.y,  z:this._sca.z}
     }
-
+    get prefab()
+    {
+        return this._prefab
+    }
     
+    get owner()
+    {
+        return this._owner
+    }
     
     
     
 }
 
 
-module.exports={AddRoom,Rooms,AddUserToRoom,UserInRoom,RemoveUserFromRoom,Room,BroadcastMsgToUsersInRoom,GetUserRoomname,ChooseNewHost}
+module.exports={AddRoom,Rooms,AddUserToRoom,RemoveUserFromRoom,Room,BroadcastMsgToUsersInRoom,ChooseNewHost}
 
 

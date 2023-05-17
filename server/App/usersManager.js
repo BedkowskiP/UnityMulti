@@ -54,17 +54,26 @@ class User
 {
     constructor(id,socket)
     {
-        this._id=id,//ID to differentiate users
-        this._name=null,//username to represent users on client side
-        this._valid=null,//validated guest vs verifed user
-        this._socket=socket,//reference to socket
-        this._isAlive=null
+        this._id=id;//ID to differentiate users
+        this._name=null;//username to represent users on client side
+        this._valid=null;//validated guest vs verifed user
+        this._socket=socket;//reference to socket
+        this._isAlive=null;
+        this._inRoom= null;  // what room user in !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     } 
     get id() {return this._id;}
     get name() {return this._name;}
     get valid() {return this._valid;}
     get socket() {return this._socket;}
+    get isAlive() {return this._isAlive;}
+    get inRoom() {return this._inRoom;}
       
+    set inRoom(INROOM)
+    { this._inRoom=INROOM  }
+    NotInRoom()
+    {
+        this._inRoom=null
+    }
 
     set id(id) 
     {
