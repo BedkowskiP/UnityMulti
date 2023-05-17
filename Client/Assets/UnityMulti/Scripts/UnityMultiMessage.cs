@@ -36,9 +36,6 @@ public class MessageType
 
 public class Message
 {
-    private string vALIDATION_REQUEST;
-    private string v1;
-    private long v2;
 
     public string Type { get; set; }
     public string Content { get; set; }
@@ -55,7 +52,6 @@ public class Message
         this.ErrorCode = errorCode;
     }
 
-
     public Message(string type, string content, long timestamp, string UserID)
     {
         this.Type = type;
@@ -63,6 +59,7 @@ public class Message
         this.Timestamp = timestamp;
         this.UserID = UserID;
     }
+
     public Message(string type, string content)
     {
         this.Type = type;

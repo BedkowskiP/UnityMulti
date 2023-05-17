@@ -1,5 +1,6 @@
 using Newtonsoft.Json;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -59,9 +60,29 @@ public class UnityMultiRoom : MonoBehaviour
     private UnityMultiNetworking multiNetworking;
     public UnityMultiRoomSettings Settings { get; private set; }
     public List<UnityMultiUser> UserList { get; private set; } = new List<UnityMultiUser>();
-    private List<GameObject> roomObjectList = new List<GameObject>();
-    private Dictionary<string, GameObject> clientObjectDict = new Dictionary<string, GameObject>();
+
+    public List<GameObject> loadedPrefabs = new List<GameObject>();
+
     public bool isSceneLoaded { get; private set; } = false;
+
+    public void Reset()
+    {
+        Settings = null;
+        UserList = new List<UnityMultiUser>();
+        if(loadedPrefabs.Count > 0)
+        {
+            for (int i = loadedPrefabs.Count - 1; i >= 0; i--)
+            {
+                GameObject obj = loadedPrefabs[i];
+                if (obj != null)
+                {
+                    Destroy(obj);
+                }
+                loadedPrefabs.RemoveAt(i);
+            }
+        }
+        loadedPrefabs = new List<GameObject>();
+    }
 
     [JsonConstructor]
     public UnityMultiRoom(UnityMultiRoomSettings Settings, List<UnityMultiUser> UserList)
@@ -71,7 +92,12 @@ public class UnityMultiRoom : MonoBehaviour
         this.UserList = UserList;
     }
 
-    public UnityMultiRoom(UnityMultiNetworking multiNetworking)
+    public UnityMultiRoom()
+    {
+        
+    }
+
+    public void AddNetworking(UnityMultiNetworking multiNetworking)
     {
         this.multiNetworking = multiNetworking;
     }
@@ -137,7 +163,7 @@ public class UnityMultiRoom : MonoBehaviour
         }
         else
         {
-            Message leaveMessage = new Message(MessageType.LEAVE_ROOM, JsonConvert.SerializeObject(multiNetworking.room.Settings));
+            Message leaveMessage = new Message(MessageType.LEAVE_ROOM, JsonConvert.SerializeObject(Settings));
             multiNetworking.SendMessage(leaveMessage);
         }
     }
@@ -189,33 +215,45 @@ public class UnityMultiRoom : MonoBehaviour
                 SetSettings(placeholder.Settings);
                 if (Settings.SceneName != "" && Settings.SceneName != null)
                 {
-                    try
+                    if(SceneManager.GetActiveScene().name != Settings.SceneName)
                     {
-                        isSceneLoaded = false;
-                        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(Settings.SceneName);
-                        while (!asyncLoad.isDone)
+                        try
                         {
-                            await Task.Yield();
+                            isSceneLoaded = false;
+                            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(Settings.SceneName, LoadSceneMode.Single);
+                            while (!asyncLoad.isDone)
+                            {
+                                await Task.Yield();
+                            }
+                            isSceneLoaded = true;
                         }
-                        isSceneLoaded = true;      
-                    } catch (Exception e)
-                    {
-                        Debug.Log(e);
-                        Debug.Log("Unable to load scene: " + Settings.SceneName + "; Make sure the scene name is correct.");
-                        LeaveRoom();
-                        return;
-                    }
+                        catch (Exception e)
+                        {
+                            Debug.Log(e);
+                            Debug.Log("Unable to load scene: " + Settings.SceneName + "; Make sure the scene name is correct.");
+                            LeaveRoom();
+                            return;
+                        }
+                        
+                    } else { isSceneLoaded = true; }
                     if (isSceneLoaded)
                     {
                         multiNetworking.InvokeRoomE("joinRoom", Settings.SceneName);
+                        bool ignore;
                         foreach (var user in placeholder.UserList)
                         {
-                            AddUser(user);
+                            ignore = false;
+                            foreach(var userOnList in UserList)
+                            {
+                                if (user == userOnList) { ignore = true; break; }
+                            }
+                            if(!ignore) AddUser(user);
                         }
                     }
                 } else { Debug.Log("SceneName is null or equal to \"\". Auto scene load function stopped."); return; }
             }
         }
+        return;
     }
     public void HandleLeaveRoom()
     {

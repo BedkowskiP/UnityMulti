@@ -3,9 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class UnityMultiSceneLoader : MonoBehaviour
+public class UnityMultiSceneLoader
 {
-    private List<string> ListOfScenes = new List<string>();
+    private string SceneToLoad;
+
+    public async void LoadLevel(string sceneName)
+    {
+        SceneToLoad = sceneName;
+
+    }
 
 
 }
