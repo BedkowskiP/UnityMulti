@@ -12,9 +12,8 @@
 - check password on createROom
 - check if isPublic is valid
 - check MaxPlayer if valid
-- ObjectList As array for everyroom with Transform/Owner/PrefabName
 - check if user requesting host change is host
-- choosenewHost choose first from list -> chose first from list except host unless 1 user in the room
+
 
 
 1.5.03
@@ -27,7 +26,7 @@
 
     - Prob change Array to HashMap
 
-- Change Rooms[roomName] access
+
 - cahnge unityobject function broacdcast inside exception outside
 
 
@@ -39,10 +38,23 @@
 + Fixed Small stuff
 
 
-1.5.x
+1.5.18
+
++ Deleting user objects on user leave
++ fixed user closign program without leaving room
++ user properly creates unityobjects on user join
++ remove user from room userlist
++ Change Rooms[roomName] access
++ choosenewHost choose first from list -> chose first from list except host unless 1 user in the room ( i hope i did it)
 
 
-- remove user from room userlist
-- impelment onuserjoin
-- implenet onuserleave
-- addparebt object to objecyunity
++- impelment onuserjoin
++- implenet onuserleave
+
+- addparebt object to objecyunity TO DO IN THE FUTURE
+
+
+- On server restart user reconnect crashes 
+            C:\Users\Cein\Desktop\Inzynierka\GIT2\UnityMulti\server\App\roomsManager.js:8
+            const users = {...Rooms[RoomName].users};//hollow copy to prevent async errors
+            TypeError: Cannot read properties of undefined (reading 'users')
