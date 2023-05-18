@@ -121,12 +121,30 @@ public class UnityMultiRoom : MonoBehaviour
         multiNetworking.ClientJoinM(newUser);
     }
 
-    public void RemoveUser(UnityMultiUser user)
+    public async void RemoveUser(UnityMultiUser user)
     {
         if (UserList.Contains(user))
         {
             UserList.Remove(user);
             multiNetworking.ClientLeaveM(user);
+
+            while (!isSceneLoaded)
+            {
+                await Task.Yield();
+            }
+
+            if (loadedPrefabs.Count > 0)
+            {
+                for (int i = loadedPrefabs.Count - 1; i >= 0; i--)
+                {
+                    GameObject obj = loadedPrefabs[i];
+                    if (obj != null && obj.GetComponent<UnityMultiObject>().GetOwner() == user.UserID)
+                    {
+                        Destroy(obj);
+                    }
+                    loadedPrefabs.RemoveAt(i);
+                }
+            }
         }
     }
     public void SetSettings(UnityMultiRoomSettings settings)

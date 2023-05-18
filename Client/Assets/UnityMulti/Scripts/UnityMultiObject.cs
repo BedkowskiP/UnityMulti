@@ -80,4 +80,8 @@ public class UnityMultiObject : MonoBehaviour
         }
     }
 
+    public string GetOwner()
+    {
+        return Owner;
+    }
 }

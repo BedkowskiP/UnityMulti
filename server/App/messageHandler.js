@@ -159,7 +159,7 @@ const HandleObjectUnity = async (socket,MsgRecvived) =>
             Position:{X:content.Position.x,   Y:content.Position.y,     Z:content.Position.z},
             Rotation:{X:content.Rotation.x,   Y:content.Rotation.y,     Z:content.Rotation.z,     W:content.Rotation.w},
             Scale:{X:content.Scale.x,     Y:content.Scale.y,    Z:content.Scale.z},
-            Owner:MsgRecvived.content.Owner
+            Owner:content.Owner
         };
 
         let msg = JSON.stringify((MSG.CreateMsg(messageTypes.UNITYOBJECTRES,jsonContent,isErrorCode,1)))

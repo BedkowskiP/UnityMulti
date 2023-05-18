@@ -425,22 +425,27 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         }
     }
 
-    private void InstantiateNewObject(Message serverMessage)
+    private async void InstantiateNewObject(Message serverMessage)
     {
+        while (!room.isSceneLoaded)
+        {
+            await Task.Yield();
+        }
+
         UnityMultiObjectInfo temp = JsonConvert.DeserializeObject<UnityMultiObjectInfo>(serverMessage.Content);
 
-        GameObject tempObj = Resources.Load<GameObject>(temp.PrefabName);
-
-        UnityMultiObject multiObject = tempObj.GetComponent<UnityMultiObject>();
+        GameObject loadedObj = Resources.Load<GameObject>(temp.PrefabName);
+        GameObject createdObj;
+        UnityMultiObject multiObject = loadedObj.GetComponent<UnityMultiObject>();
         multiObject.SetParams(this, temp);
 
         try
         {
             GameObject parent = GameObject.Find(temp.ParentObject);
-            if (parent == null) tempObj = Instantiate(tempObj, temp.Position.GetVec3(), temp.Rotation.GetQuat());
-            else tempObj = Instantiate(tempObj, temp.Position.GetVec3(), temp.Rotation.GetQuat(), parent.transform);
-            tempObj.name = "MultiObject(" + temp.ObjectID + ")";
-            room.loadedPrefabs.Add(tempObj);
+            if (parent == null) createdObj = Instantiate(loadedObj, temp.Position.GetVec3(), temp.Rotation.GetQuat());
+            else createdObj = Instantiate(loadedObj, temp.Position.GetVec3(), temp.Rotation.GetQuat(), parent.transform);
+            createdObj.name = "MultiObject(" + temp.ObjectID + ")";
+            room.loadedPrefabs.Add(createdObj);
         }
         catch (Exception e)
         {

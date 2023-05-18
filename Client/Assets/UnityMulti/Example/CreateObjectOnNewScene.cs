@@ -13,8 +13,9 @@ public class CreateObjectOnNewScene : UnityMultiNetworkingCallbacks
         
     }
 
-    public void ReloadScene()
+    public override void OnClientLeave(UnityMultiUser user)
     {
-
+        base.OnClientLeave(user);
+        Debug.Log("User: " + user.Username + "left the room.");
     }
 }
