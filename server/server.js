@@ -32,7 +32,7 @@ const UsersLoop = async () => {
 
 const RoomLoop = async () => {
   while(true){  
-    for (const name in roomsMan.Rooms)console.log("Rooms created with name: ",roomsMan.Rooms[name].name,": Users - ",JSON.stringify(roomsMan.Rooms[name].users));
+    for (const name in roomsMan.Rooms)console.log("Rooms created with name: ",roomsMan.Rooms[name].name,": Users - ",JSON.stringify(roomsMan.Rooms[name].users),": objects - ",JSON.stringify(roomsMan.Rooms[name].objectList));
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
 };
@@ -44,7 +44,7 @@ process.argv.forEach(function (val, index) {
 
 
 //UsersLoop();
-//RoomLoop();
+RoomLoop();
 //db.Connect();
 //console.log(db.Query("select * from user"));
 
@@ -62,15 +62,17 @@ server.on('connection', (socket) => {
       console.log('Client disconnected with code: '+code);
       for (let UserID in usersMan.Users) {
         if (usersMan.Users[UserID].socket === socket) {
-          Disconnect(UserID)
+          Disconnect(UserID,socket)
           break;
         }
       }
     });
 });
-const Disconnect =  async (UserID)=>
+const Disconnect =  async (UserID,socket)=>
 {
-  await roomsMan.RemoveUserFromRoom(UserID)
+
+  msg = {UserID:UserID,Content:JSON.stringify({RoomName:usersMan.Users[UserID].inRoom})}
+  await msghand.HandleLeaveRoom(socket,msg)
   await usersMan.RemoveUser(UserID);
 }
 const HandleMessage = async (socket, message) => { 
@@ -157,7 +159,7 @@ const HandleMessage = async (socket, message) => {
 async function waitAndDoSomething() {
   let waiter=1000;
 
-
+/*
   let Content = {Username:"betek",Password:null, UserID:null}
   let msg = {Type:messageTypes.REQVALIDATION, Content:JSON.stringify(Content),      Timestamp:Date.now(),      UserID:null};
   HandleMessage(null,JSON.stringify(msg));
@@ -167,8 +169,8 @@ async function waitAndDoSomething() {
   msg =     {Type:messageTypes.REQVALIDATION, Content:JSON.stringify(Content),      Timestamp:Date.now(),      UserID:null};
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
-
-  Content = {RoomName:'Room1',Password:null,IsPublic:true,MaxPlayers:10,SceneName:"Default"}
+*//*
+  Content = {RoomName:'A',Password:null,IsPublic:true,MaxPlayers:10,SceneName:"TutorialSceneTwo"}
   msg =     {Type: messageTypes.CREATEROOM,   Content : JSON.stringify(Content),Timestamp: Date.now(),UserID :  Object.keys(usersMan.Users)[0]};
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
@@ -187,15 +189,14 @@ async function waitAndDoSomething() {
   msg =     {Type: messageTypes.HOSTCHANGE,   Content : JSON.stringify(Content),Timestamp: Date.now(),UserID : Object.keys(usersMan.Users)[0]};
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
-  */
+  
   
 
   Content = {PrefabName:'FabA',Position:{x:"1",y:"2",z:"6"},Rotation:{x:"1",y:"4",z:"5",w:"7"},Scale:{x:"11",y:"3",z:"2"},Owner:null }
   msg =     {Type: messageTypes.UNITYOBJECT,  Content : JSON.stringify(Content),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[1] };
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
-  
-/*
+
   Content = {SceneName:'Scene2'}
   msg =     {Type: messageTypes.SCENECHANGE,  Content : JSON.stringify(Content),Timestamp: Date.now(),UserID : Object.keys(usersMan.Users)[1]};
   HandleMessage(null,JSON.stringify(msg));

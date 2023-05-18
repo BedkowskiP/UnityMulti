@@ -106,9 +106,20 @@ class Room
         }
         else if (typeof USER ==="number")
         {
+
+            console.log(this._users[USER].UserID)
+            const ID=this._users[USER].UserID
             this._users.splice(USER,1)
-            //OnUserLeave()
-            //REMOVE OBJECTS ON USER LEAVE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            //delete olbject of user
+            for (let i = this._objectList.length - 1; i >= 0; i--) {
+                console.log(ID," : ",this._objectList[i].owner)
+                if (this._objectList[i].owner === ID) {
+                   
+                    this._objectList.splice(i, 1);
+                }
+            }
+            //OnUserLeaveRoom()
+            
         }  
     }
     set host(ID)
@@ -122,7 +133,11 @@ class Room
         
     }   
     //set sceneName(SCENENAME){this._sceneName=SCENENAME}
-    
+    OnUserLeaveRoom()
+    {
+        
+
+    }
     OnUserJoin()
     {
         const LIST = {...this._objectList};//hollow copy to prevent async errors
@@ -163,7 +178,6 @@ class Room
     ///
     /// OBJECTLIST
     ///
-    GetObjectList(){}
     GetObjectFromList(){return this._objectList}
     AddObject(CONTENT,OWNER)
     {
@@ -174,10 +188,10 @@ class Room
         }
         else 
         { 
-            let OBJECT=new ObjectUnity(CONTENT.PrefabName,  OWNER,  CONTENT.Position,   CONTENT.Rotation,   CONTENT.Scale);
-            this._objectList[this._objectNum++]=OBJECT
+            let OBJECT=new ObjectUnity(CONTENT.PrefabName,  CONTENT.Owner,  CONTENT.Position,   CONTENT.Rotation,   CONTENT.Scale,this._objectNum);
+            this._objectList[this._objectNum]=OBJECT
             console.log("Added",OBJECT)                 
-            return {ErrorCode:0,ObjectID:this._objectNum-1};
+            return {ErrorCode:0,ObjectID:this._objectNum++};
         }
             
     }
@@ -214,8 +228,9 @@ class ObjectUnity
         }
         
     }
-    constructor(PREFAB,OWNER,POS,ROT,SCA)
+    constructor(PREFAB,OWNER,POS,ROT,SCA,ID)
     {
+        this._id=ID;
         this._pos=new ObjectUnity.PositionUnity(POS.x,POS.y,POS.z)
         this._rot=new ObjectUnity.RotationUnity(ROT.x,ROT.y,ROT.z,ROT.w)
         this._sca=new ObjectUnity.ScaleUnity(SCA.x,SCA.y,SCA.z)
@@ -244,7 +259,8 @@ class ObjectUnity
     {
         return this._owner
     }
-    
+    get id()
+    {return this._id}
     
     
 }

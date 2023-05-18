@@ -85,7 +85,7 @@ const HandleJoinRoom = async (socket,jsonmsg) =>
             jsonContent = 
             {
                 PrefabName:LIST[key].prefab,                  
-                ObjectID:key,
+                ObjectID:LIST[key].id,
                 Position:LIST[key].pos,
                 Rotation:LIST[key].rot,
                 Scale:LIST[key].sca,
@@ -114,7 +114,7 @@ const HandleLeaveRoom = async (socket,jsonmsg) =>
   let content = JSON.parse(jsonmsg.Content)
   let jsonContent =
   {
-      ame: content.RoomName
+      Name: content.RoomName
   };
   if(1!=await roomsMan.RemoveUserFromRoom(jsonmsg.UserID))//if function returns 1 it means room is about to be deleted no need to broadcast
   {
