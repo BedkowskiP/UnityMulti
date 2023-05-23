@@ -54,11 +54,33 @@ public class CreateConnection : UnityMultiNetworkingCallbacks
   }
   
   public override OnClientConnected(){
-    multiNetworking.CreateRoom(new UnityMultiRoomSettings(RoomName: s_roomName, Password: "", SceneName: "TutorialSceneTwo"));
+    multiNetworking.CreateRoom(new UnityMultiRoomSettings(RoomName: "RoomTestA", Password: "", SceneName: "TutorialSceneTwo"));
   }
 }
 
 ```
+
+Przykład skryptu łączącego się z serwerem i dołączającego do pokoju:
+
+
+```
+
+public class CreateConnection : UnityMultiNetworkingCallbacks
+{
+  public string url = "url to server";
+  public string username = "TestA";
+  
+  private void Start(){
+    multiNetworking.ConnectToServer(url, username);
+  }
+  
+  public override OnClientConnected(){
+    multiNetworking.JoinRoom(new UnityMultiRoomSettings(RoomName: "RoomTestA", Password: ""));
+  }
+}
+
+```
+
 
 ### Tworzenie obiektu po dołączeniu do pokoju
 
