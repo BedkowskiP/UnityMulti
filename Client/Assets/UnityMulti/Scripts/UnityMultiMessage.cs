@@ -21,6 +21,7 @@ public class MessageType
     public const string VALIDATION_RESPONSE = "validationResponse";
     public const string ADD_UNITY_OBJECT = "addUnityObject";
     public const string ADD_UNITY_OBJECT_RESPONSE = "responseAddUnityObject";
+    public const string TRANSFORM_UPDATE = "transformUpdate";
 
     public const string CONNECT = "connect";
     public const string DISCONNECT = "disconnect";

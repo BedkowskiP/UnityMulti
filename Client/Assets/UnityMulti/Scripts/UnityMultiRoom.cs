@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -14,6 +15,15 @@ public class UnityMultiRoomSettings
     public int MaxPlayers { get; private set; } = 10;
     public string HostID { get; private set; }
     public string SceneName { get; private set; } = "";
+
+    public UnityMultiRoomSettings(string RoomName, string Password)
+    {
+        this.RoomName = RoomName;
+        if (Password != "")
+            IsPublic = false;
+        this.Password = Password;
+    }
+
     public UnityMultiRoomSettings(string RoomName, string Password, string SceneName)
     {
         this.RoomName = RoomName;
@@ -54,47 +64,37 @@ public class UnityMultiRoomSettings
     }
 }
 
-public class UnityMultiRoom : MonoBehaviour
+public class UnityMultiRoom : UnityMultiSerializer<UnityMultiRoomHelper>
 {
     private UnityMultiNetworking multiNetworking;
     public UnityMultiRoomSettings Settings { get; private set; }
-    public List<UnityMultiUser> UserList { get; private set; } = new List<UnityMultiUser>();
 
-    public List<GameObject> loadedPrefabs = new List<GameObject>();
+    public List<GameObject> multiUserList = new List<GameObject>();
 
     public bool isSceneLoaded { get; private set; } = false;
+
+    public override void Deserialize(string obj)
+    {
+        base.Deserialize(obj);
+    }
 
     public void Reset()
     {
         Settings = null;
-        UserList = new List<UnityMultiUser>();
-        if(loadedPrefabs.Count > 0)
+        if(multiUserList.Count > 0)
         {
-            for (int i = loadedPrefabs.Count - 1; i >= 0; i--)
+            for (int i = multiUserList.Count - 1; i >= 0; i--)
             {
-                GameObject obj = loadedPrefabs[i];
+                GameObject obj = multiUserList[i];
                 if (obj != null)
                 {
                     Destroy(obj);
                 }
-                loadedPrefabs.RemoveAt(i);
+                multiUserList.RemoveAt(i);
             }
         }
-        loadedPrefabs = new List<GameObject>();
-    }
-
-    [JsonConstructor]
-    public UnityMultiRoom(UnityMultiRoomSettings Settings, List<UnityMultiUser> UserList)
-    {
-        
-        this.Settings = Settings;
-        this.UserList = UserList;
-    }
-
-    public UnityMultiRoom()
-    {
-        
-    }
+        multiUserList = new List<GameObject>();
+    }  
 
     public void AddNetworking(UnityMultiNetworking multiNetworking)
     {
@@ -103,50 +103,71 @@ public class UnityMultiRoom : MonoBehaviour
 
     public UnityMultiUser FindUser(string username)
     {
-        if (UserList.Count > 0)
+        if (multiUserList.Count > 0)
         {
-            for (int i = 0; i < UserList.Count; i++)
+            for (int i = 0; i < multiUserList.Count; i++)
             {
-                if (UserList[i].Username == username)
-                    return UserList[i];
+                if (multiUserList[i].GetComponent<UnityMultiUser>().Username == username)
+                    return multiUserList[i].GetComponent<UnityMultiUser>();
             }
         }
 
         return null;
     }
 
-    public void AddUser(UnityMultiUser newUser)
+    public GameObject GetUserObjByID(string userID)
     {
-        UserList.Add(newUser);
-        multiNetworking.ClientJoinM(newUser);
+        for (int i = multiUserList.Count - 1; i >= 0; i--)
+        {
+            GameObject obj = multiUserList[i];
+            if (obj.GetComponent<UnityMultiUser>().UserID == userID)
+            {
+                return multiUserList[i];
+            }
+        }
+        return null;
     }
 
-    public async void RemoveUser(UnityMultiUser user)
+    public void AddUser(UnityMultiUser newUser)
     {
-        if (UserList.Contains(user))
+        GameObject newUserGO = new GameObject("EmptyObject");
+        newUserGO.name = newUser.Username;
+        newUserGO.transform.parent = this.transform;
+        newUserGO.AddComponent<UnityMultiUser>().SetParams(newUser);
+
+        if (!multiUserList.Contains(newUserGO))
         {
-            UserList.Remove(user);
-            multiNetworking.ClientLeaveM(user);
+            multiUserList.Add(newUserGO);
+            multiNetworking.ClientJoinM(newUser);
+        }
+        
+    }
 
-            while (!isSceneLoaded)
-            {
-                await Task.Yield();
-            }
+    public void RemoveUser(UnityMultiUser userToRemove)
+    {
+        UnityMultiUser userComp;
 
-            if (loadedPrefabs.Count > 0)
+        for(int i = multiUserList.Count -1; i >= 0; i--)
+        {
+            userComp = multiUserList[i].GetComponent<UnityMultiUser>();
+
+            if(userToRemove == userComp)
             {
-                for (int i = loadedPrefabs.Count - 1; i >= 0; i--)
+                for (int j = userComp.UserObjectList.Count - 1; j >= 0; j--)
                 {
-                    GameObject obj = loadedPrefabs[i];
-                    if (obj != null && obj.GetComponent<UnityMultiObject>().GetOwner() == user.UserID)
+                    GameObject obj = userComp.UserObjectList[j];
+                    if (obj != null)
                     {
                         Destroy(obj);
                     }
-                    loadedPrefabs.RemoveAt(i);
                 }
+                Destroy(multiUserList[i]);
+                multiUserList.Remove(multiUserList[i]);
             }
         }
+        multiNetworking.ClientLeaveM(userToRemove);
     }
+     
     public void SetSettings(UnityMultiRoomSettings settings)
     {
         this.Settings = settings;
@@ -242,7 +263,7 @@ public class UnityMultiRoom : MonoBehaviour
             else
             {
                 multiNetworking.SetInRoom(true);
-                UnityMultiRoom placeholder = JsonConvert.DeserializeObject<UnityMultiRoom>(serverMessage.Content);
+                UnityMultiRoomHelper placeholder = JsonConvert.DeserializeObject<UnityMultiRoomHelper>(serverMessage.Content);
                 SetSettings(placeholder.Settings);
                 if (Settings.SceneName != "" && Settings.SceneName != null)
                 {
@@ -267,16 +288,17 @@ public class UnityMultiRoom : MonoBehaviour
                         }
                         
                     } else { isSceneLoaded = true; }
+
                     if (isSceneLoaded)
                     {
                         multiNetworking.InvokeRoomE("joinRoom", Settings.SceneName);
                         bool ignore;
-                        foreach (var user in placeholder.UserList)
+                        foreach (var user in placeholder.multiUserList)
                         {
                             ignore = false;
-                            foreach(var userOnList in UserList)
+                            foreach(var userOnList in multiUserList)
                             {
-                                if (user == userOnList) { ignore = true; break; }
+                                if (user == userOnList.GetComponent<UnityMultiUser>()) { ignore = true; break; }
                             }
                             if(!ignore) AddUser(user);
                         }
@@ -294,17 +316,42 @@ public class UnityMultiRoom : MonoBehaviour
 
     public void HandleUserLeave(Message serverMessage)
     {
-        UnityMultiUser placeholder = JsonConvert.DeserializeObject<UnityMultiUser>(serverMessage.Content);
+        UnityMultiUser placeholder = new UnityMultiUser();
+        placeholder.Deserialize(serverMessage.Content);
         RemoveUser(placeholder);
     }
     public void HandleUserJoin(Message serverMessage)
     {
-        UnityMultiUser placeholder = JsonConvert.DeserializeObject<UnityMultiUser>(serverMessage.Content);
+        UnityMultiUser placeholder = new UnityMultiUser();
+        placeholder.Deserialize(serverMessage.Content);
         AddUser(placeholder);
     }
     public void HandleHostChange(Message serverMessage)
     {
-        UnityMultiUser placeholder = JsonConvert.DeserializeObject<UnityMultiUser>(serverMessage.Content);
+        UnityMultiUser placeholder = new UnityMultiUser();
+        placeholder.Deserialize(serverMessage.Content);
         SetNewHost(placeholder.UserID);
+    }
+
+}
+
+public class UnityMultiRoomHelper
+{
+    public UnityMultiRoomSettings Settings { get; private set; }
+
+    public List<UnityMultiUser> multiUserList = new List<UnityMultiUser>();
+    [SerializeField]
+    public List<GameObject> loadedPrefabs = new List<GameObject>();
+
+    [JsonConstructor]
+    public UnityMultiRoomHelper(UnityMultiRoomSettings Settings, List<UnityMultiUser> UserList)
+    {
+        this.Settings = Settings;
+        this.multiUserList = UserList;
+    }
+
+    public UnityMultiRoomHelper()
+    {
+
     }
 }

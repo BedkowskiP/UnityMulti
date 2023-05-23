@@ -15,7 +15,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     }
 
     private volatile WebSocket ws;
-    private UnityMultiUser clientData;
+    private UnityMultiUser userData;
     private UnityMultiRoom room;
 
     private volatile WebSocketState _webSocketState = WebSocketState.Connecting;
@@ -70,8 +70,10 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     public event RoomClientChangeE ClientLeaveEvent;
 
     #region setup
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
+        userData = gameObject.AddComponent<UnityMultiUser>();
         SetupRoom();
     }
 
@@ -89,6 +91,8 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         isValidated = false;
         isInRoom = false;
         SetupRoom();
+        if(gameObject.GetComponent<UnityMultiUser>() == null)
+            userData = gameObject.AddComponent<UnityMultiUser>();
     }
     #endregion
 
@@ -121,7 +125,6 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     {
         startingScene = SceneManager.GetActiveScene().name;
         connectionURL = url;
-        clientData = new UnityMultiUser();
         CreateConnection();
     }
 
@@ -129,7 +132,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     {
         startingScene = SceneManager.GetActiveScene().name;
         connectionURL = url;
-        clientData = new UnityMultiUser(username);
+        userData.SetUsername(username);
         CreateConnection();
     }
 
@@ -331,19 +334,20 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
     private void RequestValidation()
     {
-        Message validationRequest = new Message(MessageType.VALIDATION_REQUEST, JsonConvert.SerializeObject(clientData));
+        Message validationRequest = new Message(MessageType.VALIDATION_REQUEST, userData.Serialize(new UnityMultiUserHelper(userData)));
 
         SendMessage(validationRequest);
     }
 
     private void HandleValidation(Message serverMessage)
     {
-        ValidationResult validationMessage = JsonConvert.DeserializeObject<ValidationResult>(serverMessage.Content);
-        clientData.SetUserId(validationMessage.UserID);
-
-        if (validationMessage.Validated)
+        if (serverMessage.ErrorCode == 0)
         {
+            UnityMultiUser validationMessage = new UnityMultiUser();
+            validationMessage.Deserialize(serverMessage.Content);
+            userData.SetUserId(validationMessage.UserID);
             isValidated = true;
+
             ClientConnectedAndReadyEvent?.Invoke();
             StartCoroutine(SendPing());
         }
@@ -377,7 +381,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     }
 
-    public async void InstantiatePlayerObject(string prefabName, Vector3 position, Quaternion rotation, Vector3 scale, GameObject parent, UnityMultiUser user)
+    public async void InstantiatePlayerObject(string prefabName, Vector3 position, Quaternion rotation, Vector3 scale, UnityMultiUser user)
     {
         
         while (!isValidated)
@@ -416,7 +420,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             else
             {
 
-                UnityMultiObjectInfo temp = new UnityMultiObjectInfo(prefabName, position, rotation, scale, parent, user.UserID);
+                UnityMultiObjectInfo temp = new UnityMultiObjectInfo(prefabName, position, rotation, scale, user.UserID);
                 Message objectMessage = new Message(MessageType.ADD_UNITY_OBJECT, JsonConvert.SerializeObject(temp));
                 SendMessage(objectMessage);
             }
@@ -435,17 +439,17 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         UnityMultiObjectInfo temp = JsonConvert.DeserializeObject<UnityMultiObjectInfo>(serverMessage.Content);
 
         GameObject loadedObj = Resources.Load<GameObject>(temp.PrefabName);
-        GameObject createdObj;
+        GameObject createdObj = null;
         UnityMultiObject multiObject = loadedObj.GetComponent<UnityMultiObject>();
         multiObject.SetParams(this, temp);
 
         try
         {
-            GameObject parent = GameObject.Find(temp.ParentObject);
+            GameObject parent = room.GetUserObjByID(temp.Owner);
             if (parent == null) createdObj = Instantiate(loadedObj, temp.Position.GetVec3(), temp.Rotation.GetQuat());
             else createdObj = Instantiate(loadedObj, temp.Position.GetVec3(), temp.Rotation.GetQuat(), parent.transform);
             createdObj.name = "MultiObject(" + temp.ObjectID + ")";
-            room.loadedPrefabs.Add(createdObj);
+            if (parent != null) parent.GetComponent<UnityMultiUser>().UserObjectList.Add(createdObj);
         }
         catch (Exception e)
         {
@@ -461,7 +465,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         if (IsConnected)
         {
             message.Timestamp = GetTimeNow();
-            message.UserID = clientData.UserID;
+            message.UserID = userData.UserID;
             ws.Send(JsonConvert.SerializeObject(message));
         }
     }
@@ -480,7 +484,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         {
             Debug.Log("User not in room.");
             return false;
-        } else if (room.Settings.HostID == clientData.UserID) return true;
+        } else if (room.Settings.HostID == userData.UserID) return true;
         else return false;
     }
 
@@ -499,12 +503,9 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         room.LeaveRoom();
     }
 
-    public string[] GetUserInfo()
+    public string GetUserID()
     {
-        string[] userInfo = new string[2];
-        userInfo[0] = clientData.Username;
-        userInfo[1] = clientData.UserID;
-        return userInfo;
+        return userData.UserID;
     }
 
     public void ChangeHost(UnityMultiUser user)

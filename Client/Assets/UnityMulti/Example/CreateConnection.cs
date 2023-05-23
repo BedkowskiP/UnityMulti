@@ -7,7 +7,6 @@ public class CreateConnection : UnityMultiNetworkingCallbacks
 {
 
     public string url = "ws://localhost:8080";
-    UnityMultiRoomSettings settings;
 
     public Button b_create;
     public Button b_join;
@@ -33,8 +32,7 @@ public class CreateConnection : UnityMultiNetworkingCallbacks
             Debug.Log("RoomName can't be empty");
             return;
         }
-        settings = new UnityMultiRoomSettings(RoomName: s_roomName, Password: "", SceneName: "TutorialSceneTwo");
-        multiNetworking.JoinRoom(settings);
+        multiNetworking.JoinRoom(new UnityMultiRoomSettings(RoomName: "RoomTestA", Password: ""));
     }
 
     public void CreateRoom()
@@ -46,8 +44,7 @@ public class CreateConnection : UnityMultiNetworkingCallbacks
             Debug.Log("RoomName can't be empty");
             return;
         }
-        settings = new UnityMultiRoomSettings(RoomName: s_roomName, Password: "", SceneName: "TutorialSceneTwo");
-        multiNetworking.CreateRoom(settings);
+        multiNetworking.CreateRoom(new UnityMultiRoomSettings(RoomName: "RoomTestA", Password: "", SceneName: "TutorialSceneTwo"));
     }
 
     public void Connect()

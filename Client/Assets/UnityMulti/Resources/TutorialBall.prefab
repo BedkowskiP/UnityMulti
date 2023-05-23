@@ -13,6 +13,8 @@ GameObject:
   - component: {fileID: 7086566787429883455}
   - component: {fileID: 7086566787429883454}
   - component: {fileID: 5671553675273601609}
+  - component: {fileID: 1818941048298678375}
+  - component: {fileID: 3585073214232612582}
   m_Layer: 0
   m_Name: TutorialBall
   m_TagString: Untagged
@@ -112,6 +114,30 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ObjectID: 
   Owner: 
-  position: {x: 0, y: 0, z: 0}
-  scale: {x: 0, y: 0, z: 0}
-  rotation: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &1818941048298678375
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7086566787429883453}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e09dd022e0fafbf418c4dcc77953a74f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  updatePosition: 1
+  updateRotation: 1
+  updateScale: 0
+--- !u!114 &3585073214232612582
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7086566787429883453}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc461440f72b38d4fa8bf2192c814508, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
