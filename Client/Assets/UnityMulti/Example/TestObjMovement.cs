@@ -25,6 +25,6 @@ public class TestObjMovement : MonoBehaviour
         float horizontalInput = Input.GetAxis("Horizontal");
         float verticalInput = Input.GetAxis("Vertical");
 
-        this.transform.position = new Vector3(horizontalInput, 0, verticalInput) * Time.deltaTime;
+        transform.Translate(new Vector3(horizontalInput, 0, verticalInput) * 3f * Time.deltaTime);
     }
 }

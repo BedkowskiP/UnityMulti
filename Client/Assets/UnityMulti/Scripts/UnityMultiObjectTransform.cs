@@ -13,65 +13,103 @@ public class UnityMultiObjectTransform : MonoBehaviour
     public bool updateRotation = true;
     public bool updateScale = false;
 
+    private bool isSendingTransform = false;
+    private float updateDelay = 0.1f;
+
     public void Setup(UnityMultiNetworking multiNetworking, UnityMultiObject Obj)
     {
         this.multiNetworking = multiNetworking;
         this.Obj = Obj;
     }
 
+    private Vector3 positionToSend;
+    private Vector3 scaleToSend;
+    private Quaternion rotationToSend;
+
     private void Awake()
     {
-        Obj.UpdatePosition += OnUpdatePosition;
-        Obj.UpdateRotation += OnUpdateRotation;
-        Obj.UpdateScale += OnUpdateScale;
+        Obj.TransformUpdate += OnTransformUpdate;
+
+        positionToSend = transform.position;
+        scaleToSend = transform.localScale;
+        rotationToSend = transform.rotation;
     }
 
-    private void OnUpdatePosition(Vector3 oldValue, Vector3 newValue)
+    private void OnTransformUpdate(Vector3 position, Vector3 scale, Quaternion rotation)
     {
-        if (!updatePosition) return;
         if (Obj.IsMine())
         {
-            if (newValue != oldValue)
+            bool transformUpdated = false;
+            if (updatePosition)
             {
-                SendNewTransform(newValue, Obj.rotation, Obj.scale);
+                if (positionToSend != position) 
+                {
+                    transformUpdated = true;
+                    positionToSend = position;
+                }
+                
             }
+
+            if (updateScale)
+            {
+                if (scaleToSend != scale)
+                {
+                    transformUpdated = true;
+                    scaleToSend = scale;
+                }
+                
+            }
+
+            if (updateRotation)
+            {
+                if (rotationToSend != rotation) 
+                {
+                    transformUpdated = true;
+                    rotationToSend = rotation;
+                }
+                
+            }
+
+            if(transformUpdated)
+                if (!isSendingTransform)
+                {
+                    StartCoroutine(SendTransformCoroutine());
+                }
         }
     }
 
-    private void OnUpdateRotation(Quaternion oldValue, Quaternion newValue)
+    private void SendNewTransform()
     {
-        if (!updateRotation) return;
-        if (Obj.IsMine())
-        {
-            if (newValue != oldValue)
-            {
-                SendNewTransform(Obj.position, newValue, Obj.scale);
-            }
-        }
+        UnityMultiTransformInfo transformInfo = new UnityMultiTransformInfo(this.name, Obj.GetObjID(), positionToSend, scaleToSend, rotationToSend);
+        Message newTransform = new Message(MessageType.TRANSFORM_UPDATE, JsonConvert.SerializeObject(transformInfo));
+        multiNetworking.SendMessage(newTransform);
     }
 
-    private void OnUpdateScale(Vector3 oldValue, Vector3 newValue)
+    private IEnumerator SendTransformCoroutine()
     {
-        if (!updateScale) return;
-        if (Obj.IsMine())
-        {
-            if (newValue != oldValue)
-            {
-                SendNewTransform(Obj.position, Obj.rotation, newValue);
-            }
-        }
-    }
-
-    private void SendNewTransform(Vector3 pos, Quaternion rot, Vector3 scal)
-    {
-        //UnityMultiTransformInfo transformInfo = new UnityMultiTransformInfo(pos, rot,scal, Obj.GetID());
-        //Message newTransform = new Message(MessageType.TRANSFORM_UPDATE, JsonConvert.SerializeObject(transformInfo));
-        //multiNetworking.SendMessage(newTransform);
+        isSendingTransform = true;
+        SendNewTransform();
+        yield return new WaitForSeconds(updateDelay);
+        isSendingTransform = false;
     }
 }
 
 public class UnityMultiTransformInfo
 {
+    public ObjVec3 Position { get; private set; }
+    public ObjQuat Rotation { get; private set; }
+    public ObjVec3 Scale { get; private set; }
 
+    public string ObjName { get; private set; }
+    public string ObjID { get; private set; }
+
+    public UnityMultiTransformInfo(string ObjName, string ObjID, Vector3 position, Vector3 scale, Quaternion rotation)
+    {
+        this.Position = new ObjVec3(position);
+        this.Rotation = new ObjQuat(rotation);
+        this.Scale = new ObjVec3(scale);
+        this.ObjName = ObjName;
+        this.ObjID = ObjID;
+    }
 }
 

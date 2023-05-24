@@ -22,12 +22,8 @@ public class UnityMultiObject : MonoBehaviour
     [SerializeField]
     private string Owner;
 
-    public delegate void Vec3E(Vector3 value, Vector3 newValue);
-    public event Vec3E UpdatePosition;
-    public event Vec3E UpdateScale;
-
-    public delegate void QuatE(Quaternion value, Quaternion newValue);
-    public event QuatE UpdateRotation;
+    public delegate void TransformUpdateE(Vector3 position, Vector3 scale, Quaternion rotation);
+    public event TransformUpdateE TransformUpdate;
 
     [SerializeField]
     private Vector3 _position;
@@ -35,10 +31,11 @@ public class UnityMultiObject : MonoBehaviour
     {
         get { return _position; }
         set {
-            UpdatePosition?.Invoke(position, value);
             _position = value;
+            TransformUpdate?.Invoke(position, scale, rotation);
         }
     }
+
     [SerializeField]
     private Vector3 _scale;
     public Vector3 scale
@@ -46,10 +43,11 @@ public class UnityMultiObject : MonoBehaviour
         get { return _scale; }
         set
         {
-            UpdateScale?.Invoke(scale, value);
             _scale = value;
+            TransformUpdate?.Invoke(position, scale, rotation);
         }
     }
+
     [SerializeField]
     private Quaternion _rotation;
     public Quaternion rotation
@@ -57,9 +55,16 @@ public class UnityMultiObject : MonoBehaviour
         get { return _rotation; }
         set
         {
-            UpdateRotation?.Invoke(rotation, value);
             _rotation = value;
+            TransformUpdate?.Invoke(position, scale, rotation);
         }
+    }
+
+    private void Update()
+    {
+        position = transform.position;
+        scale = transform.localScale;
+        rotation = transform.rotation;
     }
 
     public bool IsMine()
