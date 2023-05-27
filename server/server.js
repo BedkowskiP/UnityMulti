@@ -106,8 +106,9 @@ const HandleMessage = async (socket, message) => {
             case messageTypes.SCENECHANGE:
                 await msghand.HandleSceneChange(socket,serverMessage);
                 break;
-            case messageTypes.USER_DATA_REQUEST:
-                // handle user data request message
+            case messageTypes.UNITYOBJECTUPDATE:
+              await msghand.HandleObjectUnityUpdate(socket,serverMessage);
+              break;
                 break;
             case messageTypes.USER_DATA_RESPONSE:
                 // handle user data response message
@@ -159,22 +160,22 @@ const HandleMessage = async (socket, message) => {
 async function waitAndDoSomething() {
   let waiter=1000;
 
-/*
+
   let Content = {Username:"betek",Password:null, UserID:null}
   let msg = {Type:messageTypes.REQVALIDATION, Content:JSON.stringify(Content),      Timestamp:Date.now(),      UserID:null};
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
-
+/*
   Content = {Username:"betek2",Password:null, UserID:null}
   msg =     {Type:messageTypes.REQVALIDATION, Content:JSON.stringify(Content),      Timestamp:Date.now(),      UserID:null};
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
-*//*
+*/
   Content = {RoomName:'A',Password:null,IsPublic:true,MaxPlayers:10,SceneName:"TutorialSceneTwo"}
   msg =     {Type: messageTypes.CREATEROOM,   Content : JSON.stringify(Content),Timestamp: Date.now(),UserID :  Object.keys(usersMan.Users)[0]};
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
-
+/*
   Content = {PrefabName:'FabA',Position:{x:"1",y:"2",z:"6"},Rotation:{x:"1",y:"4",z:"5",w:"7"},Scale:{x:"11",y:"3",z:"2"},Owner:null }
   msg =     {Type: messageTypes.UNITYOBJECT,  Content : JSON.stringify(Content),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[0] };
   HandleMessage(null,JSON.stringify(msg));
@@ -184,19 +185,19 @@ async function waitAndDoSomething() {
   msg =     {Type: messageTypes.JOINROOM,     Content : JSON.stringify(Content),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[1]};
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
-/*
+
   Content = {UserID:Object.keys(usersMan.Users)[1]}
   msg =     {Type: messageTypes.HOSTCHANGE,   Content : JSON.stringify(Content),Timestamp: Date.now(),UserID : Object.keys(usersMan.Users)[0]};
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
-  
+  */
   
 
-  Content = {PrefabName:'FabA',Position:{x:"1",y:"2",z:"6"},Rotation:{x:"1",y:"4",z:"5",w:"7"},Scale:{x:"11",y:"3",z:"2"},Owner:null }
-  msg =     {Type: messageTypes.UNITYOBJECT,  Content : JSON.stringify(Content),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[1] };
+  Content = {PrefabName:'FabA',Position:{x:"1",y:"2",z:"6"},Rotation:{x:"1",y:"4",z:"5",w:"7"},Scale:{x:"11",y:"3",z:"2"},Owner: Object.keys(usersMan.Users)[0] }
+  msg =     {Type: messageTypes.UNITYOBJECT,  Content : JSON.stringify(Content),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[0] };
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
-
+/*
   Content = {SceneName:'Scene2'}
   msg =     {Type: messageTypes.SCENECHANGE,  Content : JSON.stringify(Content),Timestamp: Date.now(),UserID : Object.keys(usersMan.Users)[1]};
   HandleMessage(null,JSON.stringify(msg));
@@ -217,6 +218,10 @@ async function waitAndDoSomething() {
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
   */
+  Content = {PrefabName:'FabA',Position:{x:"-0.941437542",y:"0.0",z:"0.0"},Rotation:{x:"1",y:"4",z:"5",w:"7"},Scale:{x:"11",y:"3",z:"2"},ObjID:"0"}
+  msg =     {Type: messageTypes.UNITYOBJECTUPDATE,  Content : JSON.stringify(Content),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[0] };
+  HandleMessage(null,JSON.stringify(msg));
+  await new Promise(resolve => setTimeout(resolve, waiter));
 }
 
 if(TESTMODE)waitAndDoSomething()

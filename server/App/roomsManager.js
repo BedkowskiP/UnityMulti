@@ -5,14 +5,19 @@ let Rooms ={}; // Room objects
 
 const BroadcastMsgToUsersInRoom = async (RoomName,msg,except,Users) =>
 {
-    const users = {...Rooms[RoomName].users};//hollow copy to prevent async errors
-    for (const key in users) {
-        const ID = users[key].UserID;
-        if(ID!=except){
-            usersMan.Users[ID]?.socket?.send(msg);
-            console.log(msg,'\x1b[36m sent to',usersMan.Users[ID].id,'\x1b[0m');
+    if(RoomName)
+    {
+        console.log(Rooms[RoomName])
+        const users = {...Rooms[RoomName].users};//hollow copy to prevent async errors
+        for (const key in users) {
+            const ID = users[key].UserID;
+            if(ID!=except){
+                usersMan.Users[ID]?.socket?.send(msg);
+                console.log(msg,'\x1b[36m sent to',usersMan.Users[ID].id,'\x1b[0m');
+            }
         }
     }
+
 }
 
 const AddRoom = async (content,UserID) =>
@@ -259,9 +264,26 @@ class ObjectUnity
     {
         return this._owner
     }
+    set pos(POS)
+    {
+        this._pos.x=POS.x
+        this._pos.y=POS.y
+        this._pos.z=POS.z
+    }
     get id()
     {return this._id}
-    
+    Update(arg1,content)
+    {
+        if(arg1==7)
+        {
+            this.pos=content.Position
+            this.rot=content.Rotation
+            this.sca=content.Scale
+            console.log(content.Position)
+        }
+        return 0;///ERRORCHECK
+        
+    }
     
 }
 

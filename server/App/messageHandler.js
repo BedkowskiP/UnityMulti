@@ -159,10 +159,34 @@ const HandleObjectUnity = async (socket,MsgRecvived) =>
             Position:{X:content.Position.x,   Y:content.Position.y,     Z:content.Position.z},
             Rotation:{X:content.Rotation.x,   Y:content.Rotation.y,     Z:content.Rotation.z,     W:content.Rotation.w},
             Scale:{X:content.Scale.x,     Y:content.Scale.y,    Z:content.Scale.z},
-            Owner:MsgRecvived.content.Owner
+            Owner:content.Owner
         };
 
         let msg = JSON.stringify((MSG.CreateMsg(messageTypes.UNITYOBJECTRES,jsonContent,isErrorCode,1)))
+        roomsMan.BroadcastMsgToUsersInRoom(RoomName,msg,null,usersMan.Users,true,true);//changed except from jsonmsg.UserID-> null
+    }
+}
+const HandleObjectUnityUpdate = async (socket,MsgRecvived) =>
+{
+    let isErrorCode=0;
+    let content = JSON.parse(MsgRecvived.Content)
+    const RoomName = await usersMan.Users[MsgRecvived.UserID].inRoom;
+    const Object= roomsMan.Rooms[RoomName].objectList[content.ObjID]
+
+    isErrorCode=Object.Update(7,content)//1-pos,2-rot,4-sca
+    
+    if(isErrorCode==0)
+    {
+        let jsonContent =
+        {
+            PrefabName:Object.prefab,                  
+            ObjectID:Object.id,
+            Position:Object.pos,
+            Rotation:Object.rot,
+            Scale:Object.sca,
+        };
+
+        let msg = JSON.stringify((MSG.CreateMsg(messageTypes.UNITYOBJECTUPDATERES,jsonContent,isErrorCode,1)))
         roomsMan.BroadcastMsgToUsersInRoom(RoomName,msg,null,usersMan.Users,true,true);//changed except from jsonmsg.UserID-> null
     }
 }
@@ -181,11 +205,8 @@ const HandleSceneChange  = async (socket,MsgRecvived) =>
 }
 module.exports = {
     HandleValidation,
-    HandleCreateRoom,
-    HandleJoinRoom,
-    HandleLeaveRoom,
     HandlePing,
-    HandleHostChange,
-    HandleObjectUnity,
-    HandleSceneChange
+    HandleCreateRoom,HandleJoinRoom,HandleLeaveRoom,
+    HandleHostChange,HandleSceneChange,
+    HandleObjectUnity,HandleObjectUnityUpdate,
   };

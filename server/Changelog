@@ -46,7 +46,7 @@
 + remove user from room userlist
 + Change Rooms[roomName] access
 + choosenewHost choose first from list -> chose first from list except host unless 1 user in the room ( i hope i did it)
-
++ added id inside object to prevent id shifting inside array while splicing might be unnecessary once using hashmaps
 
 +- impelment onuserjoin
 +- implenet onuserleave
@@ -58,3 +58,7 @@
             C:\Users\Cein\Desktop\Inzynierka\GIT2\UnityMulti\server\App\roomsManager.js:8
             const users = {...Rooms[RoomName].users};//hollow copy to prevent async errors
             TypeError: Cannot read properties of undefined (reading 'users')
+
+
+1.5.27
++ Updating transofrm of unity object on msg TransformUpdate

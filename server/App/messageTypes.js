@@ -17,6 +17,8 @@
   const UNITYOBJECTRES ="responseAddUnityObject"
   const SCENECHANGE ="sceneChange"
   const RESSCENECHANGE ="responseSceneChange"
+  const UNITYOBJECTUPDATE="transformUpdate"
+  const UNITYOBJECTUPDATERES="responeTransformUpdate"
 /// <summary>
 /// these messages are used check latency.
 /// </summary>
@@ -91,5 +93,7 @@ module.exports = {
     UNITYOBJECT,
     UNITYOBJECTRES,
     RESSCENECHANGE,
-    SCENECHANGE
+    SCENECHANGE,
+    UNITYOBJECTUPDATE,
+    UNITYOBJECTUPDATERES
   };
