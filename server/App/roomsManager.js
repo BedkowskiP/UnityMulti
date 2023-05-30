@@ -272,16 +272,16 @@ class ObjectUnity
     }
     set rot(ROT)
     {
-        this._pos.x=ROT.x
-        this._pos.y=ROT.y
-        this._pos.z=ROT.z
-        this._pos.w=ROT.w
+        this._rot.x=ROT.x
+        this._rot.y=ROT.y
+        this._rot.z=ROT.z
+        this._rot.w=ROT.w
     }
     set sca(SCA)
     {
-        this._pos.x=SCA.x
-        this._pos.y=SCA.y
-        this._pos.z=SCA.z
+        this._sca.x=SCA.x
+        this._sca.y=SCA.y
+        this._sca.z=SCA.z
     }
     get id()
     {return this._id}

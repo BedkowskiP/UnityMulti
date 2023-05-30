@@ -9,7 +9,7 @@ const tester = require('./App/Test')
 
 
 const DEBUGMODE= true;   //shows incoming msgs
-const TESTMODE = true;   //generate local users
+const TESTMODE = false;   //generate local users
 const server = new WebSocket.Server({
   host: 'localhost',
   port: 8080

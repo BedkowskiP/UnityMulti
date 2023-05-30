@@ -101,13 +101,27 @@ public class UnityMultiRoom : UnityMultiSerializer<UnityMultiRoomHelper>
         this.multiNetworking = multiNetworking;
     }
 
-    public UnityMultiUser FindUser(string username)
+    public UnityMultiUser FindUserByUserName(string username)
     {
         if (multiUserList.Count > 0)
         {
             for (int i = 0; i < multiUserList.Count; i++)
             {
                 if (multiUserList[i].GetComponent<UnityMultiUser>().Username == username)
+                    return multiUserList[i].GetComponent<UnityMultiUser>();
+            }
+        }
+
+        return null;
+    }
+
+    public UnityMultiUser FindUserById(string userID)
+    {
+        if (multiUserList.Count > 0)
+        {
+            for (int i = 0; i < multiUserList.Count; i++)
+            {
+                if (multiUserList[i].GetComponent<UnityMultiUser>().UserID == userID)
                     return multiUserList[i].GetComponent<UnityMultiUser>();
             }
         }

@@ -13,8 +13,13 @@ public class UnityMultiObjectTransform : MonoBehaviour
     public bool updateRotation = true;
     public bool updateScale = false;
 
+    private Vector3 targetPosition;
+    private Quaternion targetRotation;
+    private Vector3 targetScale;
+
     private bool isSendingTransform = false;
-    private float updateDelay = 0.1f;
+    private int maxUpdatesPerSec = 60;
+
 
     public void Setup(UnityMultiNetworking multiNetworking, UnityMultiObject Obj)
     {
@@ -89,11 +94,30 @@ public class UnityMultiObjectTransform : MonoBehaviour
     {
         isSendingTransform = true;
         SendNewTransform();
-        yield return new WaitForSeconds(updateDelay);
+        yield return new WaitForSeconds(1f / maxUpdatesPerSec);
         isSendingTransform = false;
+    }
+
+    public void UpdateTransform(UnityMultiTransformInfo transformUpdate)
+    {
+        if (updatePosition)
+        {
+            transform.position = transformUpdate.Position.GetVec3();
+        }
+
+        if (updateRotation)
+        {
+            transform.rotation = transformUpdate.Rotation.GetQuat();
+        }
+
+        if (updateScale)
+        {
+            transform.localScale = transformUpdate.Scale.GetVec3();
+        }
     }
 }
 
+#nullable enable
 public class UnityMultiTransformInfo
 {
     public ObjVec3 Position { get; private set; }
@@ -102,6 +126,7 @@ public class UnityMultiTransformInfo
 
     public string ObjName { get; private set; }
     public string ObjID { get; private set; }
+    public string? OwnerID { get; private set; }
 
     public UnityMultiTransformInfo(string ObjName, string ObjID, Vector3 position, Vector3 scale, Quaternion rotation)
     {
@@ -110,6 +135,17 @@ public class UnityMultiTransformInfo
         this.Scale = new ObjVec3(scale);
         this.ObjName = ObjName;
         this.ObjID = ObjID;
+    }
+
+    [JsonConstructor]
+    public UnityMultiTransformInfo(string ObjName, string ObjID, string OwnerID, Vector3 position, Vector3 scale, Quaternion rotation)
+    {
+        this.Position = new ObjVec3(position);
+        this.Rotation = new ObjQuat(rotation);
+        this.Scale = new ObjVec3(scale);
+        this.ObjName = ObjName;
+        this.ObjID = ObjID;
+        this.OwnerID = OwnerID;
     }
 }
 

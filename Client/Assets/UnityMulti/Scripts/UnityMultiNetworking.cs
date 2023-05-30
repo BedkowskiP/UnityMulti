@@ -307,8 +307,8 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
                 case MessageType.ADD_UNITY_OBJECT_RESPONSE:
                     InstantiateNewObject(serverMessage);
                     break;
-                case MessageType.CHAT_MESSAGE:
-                    // handle chat message
+                case MessageType.TRANSFORM_UPDATE_RESPONSE:
+                    UpdateObjectTransform(serverMessage);
                     break;
                 case MessageType.SERVER_MESSAGE:
                     // handle server message
@@ -455,6 +455,25 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         {
             Debug.LogError(e);
         }
+    }
+
+    private void UpdateObjectTransform(Message serverMessage)
+    {
+        UnityMultiTransformInfo transformUpdate = JsonConvert.DeserializeObject<UnityMultiTransformInfo>(serverMessage.Content);
+
+        string username = room.FindUserById(transformUpdate.OwnerID).Username;
+        if (username == null)
+        {
+            Debug.Log("Couldn't find object by username");
+            return;
+        }
+        GameObject temp = GameObject.Find(transformUpdate.ObjName);
+        if(temp == null)
+        {
+            Debug.Log("Couldn't find object to update.");
+            return;
+        }
+        temp.GetComponent<UnityMultiObjectTransform>().UpdateTransform(transformUpdate);
     }
 
     #endregion
