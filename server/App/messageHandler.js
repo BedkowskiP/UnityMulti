@@ -171,14 +171,16 @@ const HandleObjectUnityUpdate = async (socket,MsgRecvived) =>
     let content = JSON.parse(MsgRecvived.Content)
     const RoomName = await usersMan.Users[MsgRecvived.UserID].inRoom;
     const Object= roomsMan.Rooms[RoomName].objectList[content.ObjID]
-
+    console.log(MsgRecvived)
     isErrorCode=Object.Update(7,content)//1-pos,2-rot,4-sca
     
     if(isErrorCode==0)
     {
         let jsonContent =
         {
-            PrefabName:Object.prefab,                  
+            //PrefabName:Object.prefab,                 
+            ObjName:content.ObjName,
+            OwnerID:Object.owner,
             ObjectID:Object.id,
             Position:Object.pos,
             Rotation:Object.rot,
@@ -186,7 +188,7 @@ const HandleObjectUnityUpdate = async (socket,MsgRecvived) =>
         };
 
         let msg = JSON.stringify((MSG.CreateMsg(messageTypes.UNITYOBJECTUPDATERES,jsonContent,isErrorCode,1)))
-        roomsMan.BroadcastMsgToUsersInRoom(RoomName,msg,null,usersMan.Users,true,true);//changed except from jsonmsg.UserID-> null
+        roomsMan.BroadcastMsgToUsersInRoom(RoomName,msg,MsgRecvived.UserID,usersMan.Users,true,true);//changed except from jsonmsg.UserID-> null
     }
 }
 const HandleSceneChange  = async (socket,MsgRecvived) =>

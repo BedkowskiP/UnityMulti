@@ -9,7 +9,7 @@ const tester = require('./App/Test')
 
 
 const DEBUGMODE= true;   //shows incoming msgs
-const TESTMODE = false;   //generate local users
+const TESTMODE = true;   //generate local users
 const server = new WebSocket.Server({
   host: 'localhost',
   port: 8080
@@ -218,7 +218,7 @@ async function waitAndDoSomething() {
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
   */
-  Content = {PrefabName:'FabA',Position:{x:"-0.941437542",y:"0.0",z:"0.0"},Rotation:{x:"1",y:"4",z:"5",w:"7"},Scale:{x:"11",y:"3",z:"2"},ObjID:"0"}
+  Content = {PrefabName:'FabA',Position:{x:"-0.941437542",y:"0.0",z:"0.0"},Rotation:{x:"1",y:"4",z:"5",w:"7"},Scale:{x:"11",y:"3",z:"2"},ObjID:"0",ObjName:"MultiObject(0)"}
   msg =     {Type: messageTypes.UNITYOBJECTUPDATE,  Content : JSON.stringify(Content),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[0] };
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));

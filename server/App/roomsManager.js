@@ -7,7 +7,7 @@ const BroadcastMsgToUsersInRoom = async (RoomName,msg,except,Users) =>
 {
     if(RoomName)
     {
-        console.log(Rooms[RoomName])
+        //console.log(Rooms[RoomName])
         const users = {...Rooms[RoomName].users};//hollow copy to prevent async errors
         for (const key in users) {
             const ID = users[key].UserID;
@@ -112,12 +112,12 @@ class Room
         else if (typeof USER ==="number")
         {
 
-            console.log(this._users[USER].UserID)
+            //console.log(this._users[USER].UserID)
             const ID=this._users[USER].UserID
             this._users.splice(USER,1)
             //delete olbject of user
             for (let i = this._objectList.length - 1; i >= 0; i--) {
-                console.log(ID," : ",this._objectList[i].owner)
+                //console.log(ID," : ",this._objectList[i].owner)
                 if (this._objectList[i].owner === ID) {
                    
                     this._objectList.splice(i, 1);
@@ -146,7 +146,7 @@ class Room
     OnUserJoin()
     {
         const LIST = {...this._objectList};//hollow copy to prevent async errors
-        console.log(LIST)
+        //console.log(LIST)
         /// sending list of objects 
     }
     onHostChange(NEWHOST)
@@ -195,7 +195,7 @@ class Room
         { 
             let OBJECT=new ObjectUnity(CONTENT.PrefabName,  CONTENT.Owner,  CONTENT.Position,   CONTENT.Rotation,   CONTENT.Scale,this._objectNum);
             this._objectList[this._objectNum]=OBJECT
-            console.log("Added",OBJECT)                 
+            //console.log("Added",OBJECT)                 
             return {ErrorCode:0,ObjectID:this._objectNum++};
         }
             
@@ -270,6 +270,19 @@ class ObjectUnity
         this._pos.y=POS.y
         this._pos.z=POS.z
     }
+    set rot(ROT)
+    {
+        this._pos.x=ROT.x
+        this._pos.y=ROT.y
+        this._pos.z=ROT.z
+        this._pos.w=ROT.w
+    }
+    set sca(SCA)
+    {
+        this._pos.x=SCA.x
+        this._pos.y=SCA.y
+        this._pos.z=SCA.z
+    }
     get id()
     {return this._id}
     Update(arg1,content)
@@ -279,7 +292,7 @@ class ObjectUnity
             this.pos=content.Position
             this.rot=content.Rotation
             this.sca=content.Scale
-            console.log(content.Position)
+            //console.log(content.Position)
         }
         return 0;///ERRORCHECK
         
