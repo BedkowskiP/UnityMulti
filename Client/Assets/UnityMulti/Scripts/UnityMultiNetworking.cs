@@ -457,16 +457,17 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         }
     }
 
-    private void UpdateObjectTransform(Message serverMessage)
+    private async void UpdateObjectTransform(Message serverMessage)
     {
+        while (!room.isSceneLoaded)
+        {
+            await Task.Yield();
+        }
+
         UnityMultiTransformInfo transformUpdate = JsonConvert.DeserializeObject<UnityMultiTransformInfo>(serverMessage.Content);
 
         string username = room.FindUserById(transformUpdate.OwnerID).Username;
-        if (username == null)
-        {
-            Debug.Log("Couldn't find object by username");
-            return;
-        }
+        //"mulitNetworking/"+username+"/"+
         GameObject temp = GameObject.Find(transformUpdate.ObjName);
         if(temp == null)
         {

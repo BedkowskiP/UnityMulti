@@ -19,6 +19,7 @@ public class UnityMultiObjectTransform : MonoBehaviour
 
     private bool isSendingTransform = false;
     private int maxUpdatesPerSec = 60;
+    private float smoothSpeed = 10f;
 
 
     public void Setup(UnityMultiNetworking multiNetworking, UnityMultiObject Obj)
@@ -38,6 +39,10 @@ public class UnityMultiObjectTransform : MonoBehaviour
         positionToSend = transform.position;
         scaleToSend = transform.localScale;
         rotationToSend = transform.rotation;
+
+        targetPosition = transform.position;
+        targetRotation = transform.rotation;
+        targetScale = transform.localScale;
     }
 
     private void OnTransformUpdate(Vector3 position, Vector3 scale, Quaternion rotation)
@@ -83,6 +88,31 @@ public class UnityMultiObjectTransform : MonoBehaviour
         }
     }
 
+    private void Update()
+    {
+        if (!Obj.IsMine())
+        {
+            if (updatePosition)
+            {
+                if (targetPosition != transform.position)
+                    transform.position = Vector3.Lerp(transform.position, targetPosition, smoothSpeed * Time.deltaTime);
+            }
+
+            if (updateRotation)
+            {
+                if (targetRotation != transform.rotation)
+                    transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, smoothSpeed * Time.deltaTime);
+            }
+
+            if (updateScale)
+            {
+                if (targetScale != transform.localScale)
+                    transform.localScale = Vector3.Lerp(transform.localScale, targetScale, smoothSpeed * Time.deltaTime);
+            }
+        }
+        
+    }
+
     private void SendNewTransform()
     {
         UnityMultiTransformInfo transformInfo = new UnityMultiTransformInfo(this.name, Obj.GetObjID(), positionToSend, scaleToSend, rotationToSend);
@@ -102,17 +132,17 @@ public class UnityMultiObjectTransform : MonoBehaviour
     {
         if (updatePosition)
         {
-            transform.position = transformUpdate.Position.GetVec3();
+            targetPosition = transformUpdate.Position.GetVec3();
         }
 
         if (updateRotation)
         {
-            transform.rotation = transformUpdate.Rotation.GetQuat();
+            targetRotation = transformUpdate.Rotation.GetQuat();
         }
 
         if (updateScale)
         {
-            transform.localScale = transformUpdate.Scale.GetVec3();
+            targetScale = transformUpdate.Scale.GetVec3();
         }
     }
 }

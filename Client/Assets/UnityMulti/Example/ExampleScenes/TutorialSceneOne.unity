@@ -931,7 +931,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   multiNetworking: {fileID: 0}
-  url: ws://localhost:8080
+  url: ws://0.tcp.eu.ngrok.io:18089
   b_create: {fileID: 237271534}
   b_join: {fileID: 1862732202}
   b_connect: {fileID: 1193481468}

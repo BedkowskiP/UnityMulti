@@ -165,7 +165,7 @@ public class UnityMultiRoom : UnityMultiSerializer<UnityMultiRoomHelper>
         {
             userComp = multiUserList[i].GetComponent<UnityMultiUser>();
 
-            if(userToRemove == userComp)
+            if(userToRemove.UserID == userComp.UserID)
             {
                 for (int j = userComp.UserObjectList.Count - 1; j >= 0; j--)
                 {
