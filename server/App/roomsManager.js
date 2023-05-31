@@ -92,7 +92,7 @@ class Room
         this._maxPlayers=maxPlayers;
         this._sceneName=sceneName;
         this._users=[];
-        this._objectList=[];
+        this._objectList={};
         this._onHostChange = null;
         this._objectNum = 0;
     }   
@@ -122,12 +122,16 @@ class Room
                 const ID=this._users[USER].UserID
                 this._users.splice(USER,1)
                 //delete olbject of user
-                for (let i = this._objectList.length - 1; i >= 0; i--) {
+                /*for (let i = this._objectList.length - 1; i >= 0; i--) {
                     //console.log(ID," : ",this._objectList[i].owner)
                     if (this._objectList[i].owner === ID) {
                     
-                        this._objectList.splice(i, 1);
+                    //    this._objectList.splice(i, 1);
                     }
+                }*/
+                for (const key in this._objectList) {
+                    if (this._objectList[key].owner === ID) 
+                        delete this._objectList[key]
                 }
             }
             catch
@@ -205,10 +209,12 @@ class Room
         else 
         { 
             let OBJECT=new ObjectUnity(CONTENT.PrefabName,  CONTENT.Owner,  CONTENT.Position,   CONTENT.Rotation,   CONTENT.Scale,this._objectNum);
-            this._objectList[this._objectNum]=OBJECT
-            //console.log("Added",OBJECT)     
-            //console.log(this)            
+            this._objectList[this._objectNum]=OBJECT  
             return {ErrorCode:0,ObjectID:this._objectNum++};
+            ///////////////////////////
+            /*let OBJECT=new ObjectUnity(CONTENT.PrefabName,  CONTENT.Owner,  CONTENT.Position,   CONTENT.Rotation,   CONTENT.Scale,this._objectNum);
+            this._objectList[this._objectNum]=OBJECT          
+            return {ErrorCode:0,ObjectID:this._objectNum++};*/
         }
             
     }
@@ -306,7 +312,7 @@ class ObjectUnity
             this.sca=content.Scale
 
         }
-        return 0;///ERRORCHECK 
+        return 0;///ERRORCHECK a
     }
     
 }

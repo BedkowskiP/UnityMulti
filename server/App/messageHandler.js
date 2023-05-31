@@ -170,7 +170,7 @@ const HandleObjectUnityUpdate = async (socket,MsgRecvived) =>
     let isErrorCode=0;
     let content = JSON.parse(MsgRecvived.Content)
     const RoomName = await usersMan.Users[MsgRecvived.UserID].inRoom;
-    try
+    /*try
     {
         const Object = roomsMan.Rooms[RoomName].objectList[content.ObjID]
         isErrorCode=Object.Update(7,content)
@@ -179,9 +179,12 @@ const HandleObjectUnityUpdate = async (socket,MsgRecvived) =>
         isErrorCode=209
         let msg = MSG.CreateMsg(messageTypes.UNITYOBJECTUPDATERES,null,isErrorCode,DEBUGMODE,1)//cant update object cuz it doesnt exist
         socket?.send(msg);
-    }
-    
 
+    }*/
+    const Object = roomsMan.Rooms[RoomName].objectList[content.ObjID]
+
+    isErrorCode=Object.Update(7,content)
+    
     if(isErrorCode==0)
     {
         let jsonContent =
@@ -193,6 +196,7 @@ const HandleObjectUnityUpdate = async (socket,MsgRecvived) =>
             Position:Object.pos,
             Rotation:Object.rot,
             Scale:Object.sca,
+
         };
 
         let msg = MSG.CreateMsg(messageTypes.UNITYOBJECTUPDATERES,jsonContent,isErrorCode,DEBUGMODE,1)
