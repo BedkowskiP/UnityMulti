@@ -23,7 +23,6 @@ const HandleValidation =  async (socket,jsonmsg) =>
             {
                 UserID : UserID,
                 Username : usersMan.Users[UserID].name,
-                Validated : usersMan.Users[UserID].valid
             };
         }
         let msg = MSG.CreateMsg(messageTypes.RESVALIDATION,jsonContent,isErrorCode,DEBUGMODE)

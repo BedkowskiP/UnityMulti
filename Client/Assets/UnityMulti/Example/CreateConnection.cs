@@ -1,40 +1,59 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class CreateConnection : UnityMultiNetworkingCallbacks
 {
+
     public string url = "ws://localhost:8080";
-    public long ms;
-    UnityMultiRoomSettings settings;
 
-public string username;
-    void Start()
+    public Button b_create;
+    public Button b_join;
+    public Button b_connect;
+
+    public InputField i_roomName;
+    public InputField i_username;
+
+    private string s_roomName;
+    private string s_username;
+
+    private void Awake()
     {
+        b_join.enabled = false;
+        b_create.enabled = false;
     }
 
-    void Update()
+    public void JoinRoom()
     {
-        ms = multiNetworking.GetLatency();
-    }
-
-    public override void OnClientConnected()
-    {
-        base.OnClientConnected();
-        Debug.Log("Joining room");
-        //multiNetworking.CreateRoom(settings);
-        
-    }
-    void OnGUI() {
-        if (GUILayout.Button("connect"))
+        s_roomName = i_roomName.text;
+        if (s_roomName == "")
         {
-            multiNetworking.Connect(url, username);
-            settings = new UnityMultiRoomSettings(RoomName: "RoomNames", Password:"", SceneName:"TutorialSceneTwo");
+            Debug.Log("RoomName can't be empty");
+            return;
         }
-        if (GUILayout.Button("create"))multiNetworking.CreateRoom(settings);
-        if (GUILayout.Button("join"))multiNetworking.JoinRoom(settings);
-        
-        
-        
+        multiNetworking.JoinRoom(new UnityMultiRoomSettings(RoomName: "RoomTestA", Password: ""));
+    }
+
+    public void CreateRoom()
+    {
+
+        s_roomName = i_roomName.text;
+        if (s_roomName == "")
+        {
+            Debug.Log("RoomName can't be empty");
+            return;
+        }
+        multiNetworking.CreateRoom(new UnityMultiRoomSettings(RoomName: "RoomTestA", Password: "", SceneName: "TutorialSceneTwo"));
+    }
+
+    public void Connect()
+    {
+        s_username = i_username.text;
+        multiNetworking.ConnectToServer(url, s_username);
+
+        b_create.enabled = true;
+        b_join.enabled = true;
+        b_connect.enabled = false;
     }
 }

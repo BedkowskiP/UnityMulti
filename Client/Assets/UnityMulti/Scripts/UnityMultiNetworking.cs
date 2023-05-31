@@ -15,7 +15,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     }
 
     private volatile WebSocket ws;
-    private UnityMultiUser clientData;
+    private UnityMultiUser userData;
     private UnityMultiRoom room;
 
     private volatile WebSocketState _webSocketState = WebSocketState.Connecting;
@@ -70,8 +70,10 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     public event RoomClientChangeE ClientLeaveEvent;
 
     #region setup
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
+        userData = gameObject.AddComponent<UnityMultiUser>();
         SetupRoom();
     }
 
@@ -89,6 +91,8 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         isValidated = false;
         isInRoom = false;
         SetupRoom();
+        if(gameObject.GetComponent<UnityMultiUser>() == null)
+            userData = gameObject.AddComponent<UnityMultiUser>();
     }
     #endregion
 
@@ -117,19 +121,18 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     #endregion
 
     #region connection
-    public void Connect(string url)
+    public void ConnectToServer(string url)
     {
         startingScene = SceneManager.GetActiveScene().name;
         connectionURL = url;
-        clientData = new UnityMultiUser();
         CreateConnection();
     }
 
-    public void Connect(string url, string username)
+    public void ConnectToServer(string url, string username)
     {
         startingScene = SceneManager.GetActiveScene().name;
         connectionURL = url;
-        clientData = new UnityMultiUser(username);
+        userData.SetUsername(username);
         CreateConnection();
     }
 
@@ -152,9 +155,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             {
                 ws.CloseAsync();
             }
-        }
-
-        
+        }     
 
         ws = new WebSocket(connectionURL);
 
@@ -274,22 +275,9 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
     #region serverActions
 
-    private void setTimeStamp(long pingTimestamp)
-    {
-        this.pingTimestamp = pingTimestamp;
-    }
-
-    private void RequestValidation()
-    {
-        Message validationRequest = new Message(MessageType.VALIDATION_REQUEST, JsonConvert.SerializeObject(clientData));
-
-        SendMessage(validationRequest);
-    }
-
     private async void OnServerMessage(string message)
     {
             Message serverMessage = JsonConvert.DeserializeObject<Message>(message);
-            Debug.Log(serverMessage.Type);
             switch (serverMessage.Type)
             {
                 case MessageType.PONG:
@@ -317,11 +305,10 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
                     room.HandleHostChange(serverMessage);
                     break;
                 case MessageType.ADD_UNITY_OBJECT_RESPONSE:
-                    
                     InstantiateNewObject(serverMessage);
                     break;
-                case MessageType.CHAT_MESSAGE:
-                    // handle chat message
+                case MessageType.TRANSFORM_UPDATE_RESPONSE:
+                    UpdateObjectTransform(serverMessage);
                     break;
                 case MessageType.SERVER_MESSAGE:
                     // handle server message
@@ -339,14 +326,28 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             }
             
     }
+
+    private void setTimeStamp(long pingTimestamp)
+    {
+        this.pingTimestamp = pingTimestamp;
+    }
+
+    private void RequestValidation()
+    {
+        Message validationRequest = new Message(MessageType.VALIDATION_REQUEST, userData.Serialize(new UnityMultiUserHelper(userData)));
+
+        SendMessage(validationRequest);
+    }
+
     private void HandleValidation(Message serverMessage)
     {
-        ValidationResult validationMessage = JsonConvert.DeserializeObject<ValidationResult>(serverMessage.Content);
-        clientData.SetUserId(validationMessage.UserID);
-
-        if (validationMessage.Validated)
+        if (serverMessage.ErrorCode == 0)
         {
+            UnityMultiUser validationMessage = new UnityMultiUser();
+            validationMessage.Deserialize(serverMessage.Content);
+            userData.SetUserId(validationMessage.UserID);
             isValidated = true;
+
             ClientConnectedAndReadyEvent?.Invoke();
             StartCoroutine(SendPing());
         }
@@ -380,7 +381,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     }
 
-    public async void InstantiatePlayerObject(string prefabName, Vector3 position, Quaternion rotation, Vector3 scale, GameObject parent)
+    public async void InstantiatePlayerObject(string prefabName, Vector3 position, Quaternion rotation, Vector3 scale, UnityMultiUser user)
     {
         
         while (!isValidated)
@@ -399,58 +400,81 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             await Task.Yield();
         }
 
-        //if (IsHost())
+        
+        GameObject tempObj = Resources.Load<GameObject>(prefabName);
+        if (tempObj == null)
         {
-            GameObject tempObj = Resources.Load<GameObject>(prefabName);
-            if (tempObj == null)
-            {
 
-                Debug.LogWarning("Couldn't load given prefab: " + prefabName);
-                Resources.UnloadUnusedAssets();
-                return;
+            Debug.LogWarning("Couldn't load given prefab: " + prefabName);
+            Resources.UnloadUnusedAssets();
+            return;
+        }
+        else
+        {
+
+            UnityMultiObject mulitObjTemp = tempObj.GetComponent<UnityMultiObject>();
+            if (mulitObjTemp == null)
+            {
+                Debug.LogWarning("Prefab '" + prefabName + "' don't have the <UnityMultiObject> component. Please add the component to the prefab before you try to instantiate it.");
             }
             else
             {
 
-                UnityMultiObject mulitObjTemp = tempObj.GetComponent<UnityMultiObject>();
-                if (mulitObjTemp == null)
-                {
-                    Debug.LogWarning("Prefab '" + prefabName + "' don't have the <UnityMultiObject> component. Please add the component to the prefab before you try to instantiate it.");
-                }
-                else
-                {
-
-                    UnityMultiObjectInfo temp = new UnityMultiObjectInfo(prefabName, position, rotation, scale, parent);
-                    Message objectMessage = new Message(MessageType.ADD_UNITY_OBJECT, JsonConvert.SerializeObject(temp));
-                    SendMessage(objectMessage);
-                }
-                Resources.UnloadUnusedAssets();
-                return;
+                UnityMultiObjectInfo temp = new UnityMultiObjectInfo(prefabName, position, rotation, scale, user.UserID);
+                Message objectMessage = new Message(MessageType.ADD_UNITY_OBJECT, JsonConvert.SerializeObject(temp));
+                SendMessage(objectMessage);
             }
+            Resources.UnloadUnusedAssets();
+            return;
         }
     }
 
-    private void InstantiateNewObject(Message serverMessage)
+    private async void InstantiateNewObject(Message serverMessage)
     {
+        while (!room.isSceneLoaded)
+        {
+            await Task.Yield();
+        }
+
         UnityMultiObjectInfo temp = JsonConvert.DeserializeObject<UnityMultiObjectInfo>(serverMessage.Content);
 
-        GameObject tempObj = Resources.Load<GameObject>(temp.PrefabName);
-
-        UnityMultiObject multiObject = tempObj.GetComponent<UnityMultiObject>();
+        GameObject loadedObj = Resources.Load<GameObject>(temp.PrefabName);
+        GameObject createdObj = null;
+        UnityMultiObject multiObject = loadedObj.GetComponent<UnityMultiObject>();
         multiObject.SetParams(this, temp);
 
         try
         {
-            GameObject parent = GameObject.Find(temp.ParentObject);
-            if (parent == null) tempObj = Instantiate(tempObj, temp.Position.GetVec3(), temp.Rotation.GetQuat());
-            else tempObj = Instantiate(tempObj, temp.Position.GetVec3(), temp.Rotation.GetQuat(), parent.transform);
-            tempObj.name = "MultiObject(" + temp.ObjectID + ")";
-            room.loadedPrefabs.Add(tempObj);
+            GameObject parent = room.GetUserObjByID(temp.Owner);
+            if (parent == null) createdObj = Instantiate(loadedObj, temp.Position.GetVec3(), temp.Rotation.GetQuat());
+            else createdObj = Instantiate(loadedObj, temp.Position.GetVec3(), temp.Rotation.GetQuat(), parent.transform);
+            createdObj.name = "MultiObject(" + temp.ObjectID + ")";
+            if (parent != null) parent.GetComponent<UnityMultiUser>().UserObjectList.Add(createdObj);
         }
         catch (Exception e)
         {
             Debug.LogError(e);
         }
+    }
+
+    private async void UpdateObjectTransform(Message serverMessage)
+    {
+        while (!room.isSceneLoaded)
+        {
+            await Task.Yield();
+        }
+
+        UnityMultiTransformInfo transformUpdate = JsonConvert.DeserializeObject<UnityMultiTransformInfo>(serverMessage.Content);
+
+        string username = room.FindUserById(transformUpdate.OwnerID).Username;
+        //"mulitNetworking/"+username+"/"+
+        GameObject temp = GameObject.Find(transformUpdate.ObjName);
+        if(temp == null)
+        {
+            Debug.Log("Couldn't find object to update.");
+            return;
+        }
+        temp.GetComponent<UnityMultiObjectTransform>().UpdateTransform(transformUpdate);
     }
 
     #endregion
@@ -461,7 +485,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         if (IsConnected)
         {
             message.Timestamp = GetTimeNow();
-            message.UserID = clientData.UserID;
+            message.UserID = userData.UserID;
             ws.Send(JsonConvert.SerializeObject(message));
         }
     }
@@ -480,7 +504,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         {
             Debug.Log("User not in room.");
             return false;
-        } else if (room.Settings.HostID == clientData.UserID) return true;
+        } else if (room.Settings.HostID == userData.UserID) return true;
         else return false;
     }
 
@@ -499,12 +523,9 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         room.LeaveRoom();
     }
 
-    public string[] GetUserInfo()
+    public string GetUserID()
     {
-        string[] userInfo = new string[2];
-        userInfo[0] = clientData.Username;
-        userInfo[1] = clientData.UserID;
-        return userInfo;
+        return userData.UserID;
     }
 
     public void ChangeHost(UnityMultiUser user)

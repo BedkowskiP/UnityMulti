@@ -25,10 +25,10 @@ const db = new DB.database(
 
 
 const RoomLoop = async () => {
-  while(true){  
-    for (const name in roomsMan.Rooms)console.log("Rooms created with name: ",roomsMan.Rooms[name].name,": Users - ",JSON.stringify(roomsMan.Rooms[name].users),": objects - ",JSON.stringify(roomsMan.Rooms[name].objectList));
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  }
+  //while(true){  
+    //for (const name in roomsMan.Rooms)console.log("Rooms created with name: ",roomsMan.Rooms[name].name,": Users - ",JSON.stringify(roomsMan.Rooms[name].users),": objects - ",JSON.stringify(roomsMan.Rooms[name].objectList));
+    //await new Promise(resolve => setTimeout(resolve, 1000));
+  //}
 };
 
 process.argv.forEach(function (val, index) {

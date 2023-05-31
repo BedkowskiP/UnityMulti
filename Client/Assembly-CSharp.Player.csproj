@@ -63,15 +63,15 @@
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiNetworking.cs" />
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiUser.cs" />
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiMessage.cs" />
+    <Compile Include="Assets\UnityMulti\Scripts\UnityMultiSerializer.cs" />
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiErrorHandler.cs" />
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiNetworkingCallbacks.cs" />
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiObject.cs" />
-    <Compile Include="Assets\UnityMulti\Scripts\UnityMultiObjectInfo.cs" />
+    <Compile Include="Assets\UnityMulti\Example\TestObjMovement.cs" />
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiObjectTransform.cs" />
     <Compile Include="Assets\UnityMulti\Example\CreateConnection.cs" />
     <Compile Include="Assets\UnityMulti\Example\CreateObjectOnNewScene.cs" />
-    <Compile Include="Assets\UnityMulti\Scripts\UnityMultiSceneLoader.cs" />
-    <Compile Include="Assets\UnityMulti\Scripts\UnityMultiValidationHelper.cs" />
+    <Compile Include="Assets\Test1.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\UnityMulti\Libraries\websocket-sharp.dll" />

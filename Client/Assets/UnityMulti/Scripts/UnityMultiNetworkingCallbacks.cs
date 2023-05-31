@@ -7,14 +7,30 @@ using WebSocketSharp;
 
 public class UnityMultiNetworkingCallbacks : MonoBehaviour
 {
-    [HideInInspector]
+    
     public UnityMultiNetworking multiNetworking;
-    [HideInInspector]
+    
     public List<string> customMessageTypes { get; private set; } = new List<string>();
 
     private void Awake()
     {
         multiNetworking = UnityMultiNetworking.Instance;
+        SetupEvents();
+        
+    }
+
+    private void Update()
+    {
+        if (multiNetworking == null)
+        {
+            multiNetworking = UnityMultiNetworking.Instance;
+            SetupEvents();
+        }
+        
+    }
+
+    private void SetupEvents()
+    {
         multiNetworking.CustomMessageEvent += OnCustomMessage;
         multiNetworking.ClientErrorEvent += OnClientError;
         multiNetworking.ClientConnectedAndReadyEvent += OnClientConnected;
