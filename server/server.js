@@ -2,14 +2,14 @@ const WebSocket = require('ws');
 const msghand = require('./App/messageHandler')
 const messageTypes = require('./App/messageTypes');
 const DB = require('./App/database');
-const roomsMan = require('./App/roomsManager');
 const usersMan = require('./App/usersManager');
-const tester = require('./App/Test')
+const roomsMan = require('./App/roomsManager');
+const logger = require('./logger')
 
 
 
 const DEBUGMODE= true;   //shows incoming msgs
-const TESTMODE = true;   //generate local users
+const TESTMODE = false;   //generate local users
 const server = new WebSocket.Server({
   host: 'localhost',
   port: 8080
@@ -22,13 +22,7 @@ const db = new DB.database(
   "betolo9528UM",
   "mysql")
 
-const UsersLoop = async () => {
-  while(true){
-    for (const key in usersMan.Users) 
-      console.log("Users connected ID: ",usersMan.Users[key].id);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  }
-};
+
 
 const RoomLoop = async () => {
   while(true){  
@@ -42,14 +36,12 @@ process.argv.forEach(function (val, index) {
 });
 
 
-
-//UsersLoop();
 RoomLoop();
 //db.Connect();
 //console.log(db.Query("select * from user"));
 
 
-console.log('Starting WebSocket server: ');
+console.log('Starting WebSocket server: \n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@');
 
 server.on('connection', (socket) => {
     console.log('Client connected');
@@ -79,7 +71,7 @@ const HandleMessage = async (socket, message) => {
     try 
     {
         const serverMessage = JSON.parse(message);
-        if(DEBUGMODE){if(serverMessage.Type!=messageTypes.PING)console.log(serverMessage);}
+        if(DEBUGMODE){if(serverMessage.Type!=messageTypes.PING)logger.LogFile(message);}
         switch (serverMessage.Type) 
         {
             case messageTypes.REQVALIDATION:
@@ -148,7 +140,8 @@ const HandleMessage = async (socket, message) => {
     } 
     catch (e) 
     {
-        console.log('\x1b[41m%s\x1b[0m','Received message error:', e, '\nMessage from server:', message);
+        logger.ErrorFile(message);
+        console.log(e)
     }
 };
 //Ghost object to test locally
@@ -158,46 +151,47 @@ const HandleMessage = async (socket, message) => {
 
 
 async function waitAndDoSomething() {
-  let waiter=1000;
+  let waiter=2000;
 
 
   let Content = {Username:"betek",Password:null, UserID:null}
   let msg = {Type:messageTypes.REQVALIDATION, Content:JSON.stringify(Content),      Timestamp:Date.now(),      UserID:null};
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
-/*
+
   Content = {Username:"betek2",Password:null, UserID:null}
   msg =     {Type:messageTypes.REQVALIDATION, Content:JSON.stringify(Content),      Timestamp:Date.now(),      UserID:null};
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
-*/
+
   Content = {RoomName:'A',Password:null,IsPublic:true,MaxPlayers:10,SceneName:"TutorialSceneTwo"}
   msg =     {Type: messageTypes.CREATEROOM,   Content : JSON.stringify(Content),Timestamp: Date.now(),UserID :  Object.keys(usersMan.Users)[0]};
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
-/*
-  Content = {PrefabName:'FabA',Position:{x:"1",y:"2",z:"6"},Rotation:{x:"1",y:"4",z:"5",w:"7"},Scale:{x:"11",y:"3",z:"2"},Owner:null }
-  msg =     {Type: messageTypes.UNITYOBJECT,  Content : JSON.stringify(Content),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[0] };
-  HandleMessage(null,JSON.stringify(msg));
-  await new Promise(resolve => setTimeout(resolve, waiter));
 
-  Content = {RoomName:'Room1'}
+ 
+
+  Content = {RoomName:'A'}
   msg =     {Type: messageTypes.JOINROOM,     Content : JSON.stringify(Content),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[1]};
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
-
+/*
   Content = {UserID:Object.keys(usersMan.Users)[1]}
   msg =     {Type: messageTypes.HOSTCHANGE,   Content : JSON.stringify(Content),Timestamp: Date.now(),UserID : Object.keys(usersMan.Users)[0]};
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
   */
-  
 
-  Content = {PrefabName:'FabA',Position:{x:"1",y:"2",z:"6"},Rotation:{x:"1",y:"4",z:"5",w:"7"},Scale:{x:"11",y:"3",z:"2"},Owner: Object.keys(usersMan.Users)[0] }
+  Content = {PrefabName:'FabA',Position:{x:"1",y:"2",z:"6"},Rotation:{x:"1",y:"4",z:"5",w:"7"},Scale:{x:"11",y:"3",z:"2"},Owner:Object.keys(usersMan.Users)[0] }
   msg =     {Type: messageTypes.UNITYOBJECT,  Content : JSON.stringify(Content),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[0] };
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
-/*
+
+  Content = {PrefabName:'FabA',Position:{x:"1",y:"2",z:"6"},Rotation:{x:"1",y:"4",z:"5",w:"7"},Scale:{x:"11",y:"3",z:"2"},Owner: Object.keys(usersMan.Users)[1] }
+  msg =     {Type: messageTypes.UNITYOBJECT,  Content : JSON.stringify(Content),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[0] };
+  HandleMessage(null,JSON.stringify(msg));
+  await new Promise(resolve => setTimeout(resolve, waiter));
+ /*
   Content = {SceneName:'Scene2'}
   msg =     {Type: messageTypes.SCENECHANGE,  Content : JSON.stringify(Content),Timestamp: Date.now(),UserID : Object.keys(usersMan.Users)[1]};
   HandleMessage(null,JSON.stringify(msg));
@@ -212,16 +206,32 @@ async function waitAndDoSomething() {
   msg =     {Type: messageTypes.LEAVEROOM,    Content : JSON.stringify(Content),Timestamp: Date.now(),UserID : Object.keys(usersMan.Users)[1]};
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
-
-  Content = {RoomName:'Room1' }
-  msg =     {Type: messageTypes.LEAVEROOM,    Content : JSON.stringify(Content),Timestamp: Date.now(),UserID : Object.keys(usersMan.Users)[0]};
+*/
+  Content = {RoomName:'A' }
+  msg =     {Type: messageTypes.LEAVEROOM,    Content : JSON.stringify(Content),Timestamp: Date.now(),UserID : Object.keys(usersMan.Users)[1]};
   HandleMessage(null,JSON.stringify(msg));
   await new Promise(resolve => setTimeout(resolve, waiter));
-  */
+  /*
   Content = {PrefabName:'FabA',Position:{x:"-0.941437542",y:"0.0",z:"0.0"},Rotation:{x:"1",y:"4",z:"5",w:"7"},Scale:{x:"11",y:"3",z:"2"},ObjID:"0",ObjName:"MultiObject(0)"}
   msg =     {Type: messageTypes.UNITYOBJECTUPDATE,  Content : JSON.stringify(Content),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[0] };
   HandleMessage(null,JSON.stringify(msg));
-  await new Promise(resolve => setTimeout(resolve, waiter));
+  await new Promise(resolve => setTimeout(resolve, waiter));*/
+  UsersLoop();
 }
 
 if(TESTMODE)waitAndDoSomething()
+
+const UsersLoop = async () => {
+  while(true){
+    //for (const key in usersMan.Users) 
+      //console.log("Users connected ID: ",usersMan.Users[key].id);
+      
+      let Content2 = {PrefabName:'FabA',Position:{x:"-0.941437542",y:"0.0",z:"0.0"},Rotation:{x:"1",y:"4",z:"5",w:"7"},Scale:{x:"11",y:"3",z:"2"},ObjID:"1",ObjName:"MultiObject(0)"}
+      let msg2 =     {Type: messageTypes.UNITYOBJECTUPDATE,  Content : JSON.stringify(Content2),Timestamp: Date.now(), UserID : Object.keys(usersMan.Users)[0] };
+      HandleMessage(null,JSON.stringify(msg2));
+      for (const name in roomsMan.Rooms)console.log("Rooms created with name: ",roomsMan.Rooms[name].name,": Users - ",JSON.stringify(roomsMan.Rooms[name].users),": objects - ",JSON.stringify(roomsMan.Rooms[name].objectList));
+      
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+};
+

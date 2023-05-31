@@ -4,4 +4,5 @@
 /Client/UserSettings
 /Client/Logs
 /server/node_modules
+/server/logs
 *.cache

@@ -1,21 +1,25 @@
 const usersMan = require("./usersManager");
 const MSG = require('./message')
-
+const logger = require('./../logger')
 let Rooms ={}; // Room objects
 
-const BroadcastMsgToUsersInRoom = async (RoomName,msg,except,Users) =>
+const BroadcastMsgToUsersInRoom = async (RoomName,msg,except) =>
 {
-    if(RoomName)
+    //console.log(Rooms[RoomName])
+    if(RoomName in Rooms)
     {
-        //console.log(Rooms[RoomName])
         const users = {...Rooms[RoomName].users};//hollow copy to prevent async errors
         for (const key in users) {
             const ID = users[key].UserID;
             if(ID!=except){
                 usersMan.Users[ID]?.socket?.send(msg);
-                console.log(msg,'\x1b[36m sent to',usersMan.Users[ID].id,'\x1b[0m');
+                logger.LogFile(msg + "SENT TO "+usersMan.Users[ID].id,true)
             }
         }
+    }
+    else
+    {
+        logger.ErrorFile("Room doesnt exist : "+ RoomName)
     }
 
 }
@@ -42,6 +46,7 @@ const RemoveUserFromRoom = async (UserID) =>
         if(Object.keys(Rooms[RoomName].users).length <= 0)
         {
             await DeleteRoom(RoomName);//everyone left
+
             return 1;
         }
         else if(await Rooms[RoomName].host==UserID)await ChooseNewHost(RoomName);//host left but still users inside
@@ -61,7 +66,7 @@ const DeleteRoom = async (RoomName,ERR) =>
 }
 const OnDeletRoom =async (RoomName,ERR)=>
 {
-    const msg = JSON.stringify((MSG.CreateMsg("responseHostChange",{},ERR,false,true)))
+    const msg = MSG.CreateMsg("responseHostChange",{},ERR,false,true)
     BroadcastMsgToUsersInRoom(RoomName,msg,null,usersMan.Users)
 }
 const ChooseNewHost = async (RoomName) =>
@@ -111,17 +116,23 @@ class Room
         }
         else if (typeof USER ==="number")
         {
-
-            //console.log(this._users[USER].UserID)
-            const ID=this._users[USER].UserID
-            this._users.splice(USER,1)
-            //delete olbject of user
-            for (let i = this._objectList.length - 1; i >= 0; i--) {
-                //console.log(ID," : ",this._objectList[i].owner)
-                if (this._objectList[i].owner === ID) {
-                   
-                    this._objectList.splice(i, 1);
+            try {
+                
+                //console.log(this._users[USER].UserID)
+                const ID=this._users[USER].UserID
+                this._users.splice(USER,1)
+                //delete olbject of user
+                for (let i = this._objectList.length - 1; i >= 0; i--) {
+                    //console.log(ID," : ",this._objectList[i].owner)
+                    if (this._objectList[i].owner === ID) {
+                    
+                        this._objectList.splice(i, 1);
+                    }
                 }
+            }
+            catch
+            {
+                console.log("user left and some problems cuz of unity editor")
             }
             //OnUserLeaveRoom()
             
@@ -156,7 +167,7 @@ class Room
         {
             UserID : NEWHOST
         }
-        const msg = JSON.stringify((MSG.CreateMsg("responseHostChange",jsonContent,0,false,true)))
+        const msg = MSG.CreateMsg("responseHostChange",jsonContent,0,false,true)
         BroadcastMsgToUsersInRoom(this._name,msg,null,usersMan.Users)
     }
     
@@ -177,7 +188,7 @@ class Room
         {
             SceneName : SCENE
         }
-        const msg = JSON.stringify((MSG.CreateMsg("responseSceneChange",jsonContent,0,false,true)))
+        const msg = MSG.CreateMsg("responseSceneChange",jsonContent,0,false,true)
         BroadcastMsgToUsersInRoom(this._name,msg,null,usersMan.Users)
     }
     ///
@@ -195,7 +206,8 @@ class Room
         { 
             let OBJECT=new ObjectUnity(CONTENT.PrefabName,  CONTENT.Owner,  CONTENT.Position,   CONTENT.Rotation,   CONTENT.Scale,this._objectNum);
             this._objectList[this._objectNum]=OBJECT
-            //console.log("Added",OBJECT)                 
+            //console.log("Added",OBJECT)     
+            //console.log(this)            
             return {ErrorCode:0,ObjectID:this._objectNum++};
         }
             
@@ -292,10 +304,9 @@ class ObjectUnity
             this.pos=content.Position
             this.rot=content.Rotation
             this.sca=content.Scale
-            //console.log(content.Position)
+
         }
-        return 0;///ERRORCHECK
-        
+        return 0;///ERRORCHECK 
     }
     
 }

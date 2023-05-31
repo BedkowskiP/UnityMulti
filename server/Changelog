@@ -62,3 +62,8 @@
 
 1.5.27
 + Updating transofrm of unity object on msg TransformUpdate
+
+1.5.31
++ added logging
++ fixed transform update
++ resolving error with updating nonexsiting objects with 209 ERROR respone to caller
