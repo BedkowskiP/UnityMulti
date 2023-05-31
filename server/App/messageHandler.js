@@ -12,7 +12,7 @@ const HandleValidation =  async (socket,jsonmsg) =>
     let isErrorCode=0;
     let jsonContent = {}
     const UserID = await usersMan.CreateUser(socket);
-    if(UserID===400)socket?.send(JSON.stringify(MSG.CreateMsg(messageTypes.RESVALIDATION,jsonContent,400,DEBUGMODE)));
+    if(UserID===400)socket?.send(MSG.CreateMsg(messageTypes.RESVALIDATION,jsonContent,400,DEBUGMODE));
     else
     {
         isErrorCode=usersMan.Users[UserID].SetName(content.Username)
@@ -25,7 +25,7 @@ const HandleValidation =  async (socket,jsonmsg) =>
                 Username : usersMan.Users[UserID].name,
             };
         }
-        let msg = JSON.stringify(MSG.CreateMsg(messageTypes.RESVALIDATION,jsonContent,isErrorCode,DEBUGMODE))
+        let msg = MSG.CreateMsg(messageTypes.RESVALIDATION,jsonContent,isErrorCode,DEBUGMODE)
         socket?.send(msg);
         
     }
@@ -33,7 +33,7 @@ const HandleValidation =  async (socket,jsonmsg) =>
 const HandlePing = async (socket,jsonmsg) => 
 {
     let isErrorCode = 0;
-    let msg=JSON.stringify(MSG.CreateMsg(messageTypes.PONG,jsonmsg.Timestamp,isErrorCode,false))
+    let msg=MSG.CreateMsg(messageTypes.PONG,jsonmsg.Timestamp,isErrorCode,false)
     socket?.send(msg);
 };
 
@@ -55,7 +55,7 @@ const HandleCreateRoom = async (socket,jsonmsg) =>
         SceneName : content.SceneName
     };
     await roomsMan.AddRoom(content,jsonmsg.UserID);
-    let msg = JSON.stringify((MSG.CreateMsg(messageTypes.RESCREATEROOM,jsonContent,isErrorCode,DEBUGMODE)))
+    let msg = (MSG.CreateMsg(messageTypes.RESCREATEROOM,jsonContent,isErrorCode,DEBUGMODE))
     socket?.send(msg);
     HandleJoinRoom(socket,jsonmsg)//205 Await
 }
@@ -73,7 +73,7 @@ const HandleJoinRoom = async (socket,jsonmsg) =>
         Settings: { RoomName:content.RoomName,SceneName:roomsMan.Rooms[content.RoomName].sceneName,HostID:await roomsMan.Rooms[content.RoomName].host},
         UserList: await(roomsMan.Rooms[content.RoomName].users)//get list of users that joined given room   "list:[{UserID,Username},{UserID,Username}]"
     };
-    let msg = JSON.stringify(MSG.CreateMsg(messageTypes.RESJOINROOM,jsonContent,isErrorCode,DEBUGMODE))
+    let msg = MSG.CreateMsg(messageTypes.RESJOINROOM,jsonContent,isErrorCode,DEBUGMODE)
     socket?.send(msg);
     const LIST = {...roomsMan.Rooms[content.RoomName].objectList};
     if(isErrorCode===0&&LIST.length!=0)
@@ -90,7 +90,7 @@ const HandleJoinRoom = async (socket,jsonmsg) =>
                 Scale:LIST[key].sca,
                 Owner:LIST[key].owner
             }
-            msg = JSON.stringify((MSG.CreateMsg(messageTypes.UNITYOBJECTRES,jsonContent,isErrorCode,1)))
+            msg = (MSG.CreateMsg(messageTypes.UNITYOBJECTRES,jsonContent,isErrorCode,1))
             socket?.send(msg);
         }
     }
@@ -100,9 +100,9 @@ const HandleJoinRoom = async (socket,jsonmsg) =>
         UserID : jsonmsg.UserID,
         Username : usersMan.Users[jsonmsg.UserID].name
     }
-    msg = JSON.stringify((MSG.CreateMsg(messageTypes.USERJOIN,jsonContent,isErrorCode,DEBUGMODE,true)))
+    msg = MSG.CreateMsg(messageTypes.USERJOIN,jsonContent,isErrorCode,DEBUGMODE,false)
     
-    roomsMan.BroadcastMsgToUsersInRoom(content.RoomName,msg,jsonmsg.UserID,usersMan.Users,true);
+    roomsMan.BroadcastMsgToUsersInRoom(content.RoomName,msg,jsonmsg.UserID);
 }
 
 const HandleLeaveRoom = async (socket,jsonmsg) =>
@@ -123,10 +123,10 @@ const HandleLeaveRoom = async (socket,jsonmsg) =>
         UserID : jsonmsg.UserID,
         Username : usersMan.Users[jsonmsg.UserID].name
       }
-      let msg = JSON.stringify((MSG.CreateMsg(messageTypes.USERLEAVE,jsonContent,isErrorCode,DEBUGMODE,true)))
+      let msg = MSG.CreateMsg(messageTypes.USERLEAVE,jsonContent,isErrorCode,DEBUGMODE,true)
       roomsMan.BroadcastMsgToUsersInRoom(content.RoomName,msg,jsonmsg.UserID,usersMan.Users,true);
   }
-  let msg = JSON.stringify(MSG.CreateMsg(messageTypes.RESLEAVEROOM,jsonContent,isErrorCode,DEBUGMODE))
+  let msg = MSG.CreateMsg(messageTypes.RESLEAVEROOM,jsonContent,isErrorCode,DEBUGMODE)
   socket?.send(msg);
   
 }
@@ -161,8 +161,8 @@ const HandleObjectUnity = async (socket,MsgRecvived) =>
             Owner:content.Owner
         };
 
-        let msg = JSON.stringify((MSG.CreateMsg(messageTypes.UNITYOBJECTRES,jsonContent,isErrorCode,1)))
-        roomsMan.BroadcastMsgToUsersInRoom(RoomName,msg,null,usersMan.Users,true,true);//changed except from jsonmsg.UserID-> null
+        let msg = MSG.CreateMsg(messageTypes.UNITYOBJECTRES,jsonContent,isErrorCode,DEBUGMODE,1)
+        roomsMan.BroadcastMsgToUsersInRoom(RoomName,msg,null);//changed except from jsonmsg.UserID-> null
     }
 }
 const HandleObjectUnityUpdate = async (socket,MsgRecvived) =>
@@ -170,10 +170,18 @@ const HandleObjectUnityUpdate = async (socket,MsgRecvived) =>
     let isErrorCode=0;
     let content = JSON.parse(MsgRecvived.Content)
     const RoomName = await usersMan.Users[MsgRecvived.UserID].inRoom;
-    const Object= roomsMan.Rooms[RoomName].objectList[content.ObjID]
-    console.log(MsgRecvived)
-    isErrorCode=Object.Update(7,content)//1-pos,2-rot,4-sca
+    try
+    {
+        const Object = roomsMan.Rooms[RoomName].objectList[content.ObjID]
+        isErrorCode=Object.Update(7,content)
+    }
+    catch {
+        isErrorCode=209
+        let msg = MSG.CreateMsg(messageTypes.UNITYOBJECTUPDATERES,null,isErrorCode,DEBUGMODE,1)//cant update object cuz it doesnt exist
+        socket?.send(msg);
+    }
     
+
     if(isErrorCode==0)
     {
         let jsonContent =
@@ -187,8 +195,8 @@ const HandleObjectUnityUpdate = async (socket,MsgRecvived) =>
             Scale:Object.sca,
         };
 
-        let msg = JSON.stringify((MSG.CreateMsg(messageTypes.UNITYOBJECTUPDATERES,jsonContent,isErrorCode,1)))
-        roomsMan.BroadcastMsgToUsersInRoom(RoomName,msg,MsgRecvived.UserID,usersMan.Users,true,true);//changed except from jsonmsg.UserID-> null
+        let msg = MSG.CreateMsg(messageTypes.UNITYOBJECTUPDATERES,jsonContent,isErrorCode,DEBUGMODE,1)
+        roomsMan.BroadcastMsgToUsersInRoom(RoomName,    msg,    MsgRecvived.UserID,     usersMan.Users,     DEBUGMODE);//changed except from jsonmsg.UserID-> null
     }
 }
 const HandleSceneChange  = async (socket,MsgRecvived) =>
@@ -200,7 +208,7 @@ const HandleSceneChange  = async (socket,MsgRecvived) =>
     isErrorCode=roomsMan.Rooms[RoomName].SetSceneName(contentMsgRecvived.SceneName,MsgRecvived.UserID);
     if(isErrorCode.ErrorCode!=0)
     {
-        let msg = JSON.stringify((MSG.CreateMsg(messageTypes.RESSCENECHANGE,contentMsgRecvived,isErrorCode,DEBUGMODE)))
+        let msg = MSG.CreateMsg(messageTypes.RESSCENECHANGE,contentMsgRecvived,isErrorCode,DEBUGMODE)
         socket?.send(msg);
     }
 }

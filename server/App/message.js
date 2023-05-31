@@ -1,14 +1,16 @@
+const logger = require('./../logger')
 const CreateMsg =  (type,cont,err,log,broadcast) =>
 {
-    let result = 
+    let result = JSON.stringify(
     {
         Type : type,
         Content : JSON.stringify(cont),
         ErrorCode : err, 
         Timestamp: Date.now()
-    }
+    })
     
-    if(log&&broadcast==null)console.log("msg from server: ",{Type : type,Content : cont,ErrorCode : err,Timestamp: Date.now()})
+    if(log&&broadcast==null)logger.LogFile(result);
+    
     return result
 }
 
