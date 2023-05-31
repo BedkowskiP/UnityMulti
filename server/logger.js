@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const logsDirectory = 'logs';
-
+const consol = false;
 const createLogsDirectory = () => {
     if (!fs.existsSync(logsDirectory)) {
       fs.mkdirSync(logsDirectory);
