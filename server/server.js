@@ -108,6 +108,9 @@ const HandleMessage = async (socket, message) => {
               await msghand.HandleObjectUnityUpdate(socket,serverMessage);
               break;
                 break;
+            case messageTypes.RPCMETHOD:
+              await msghand.HandleRPCMethod(socket,serverMessage);
+              break;
             case messageTypes.USER_DATA_RESPONSE:
                 // handle user data response message
                 break;
