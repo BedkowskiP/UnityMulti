@@ -216,10 +216,20 @@ const HandleSceneChange  = async (socket,MsgRecvived) =>
         socket?.send(msg);
     }
 }
+const HandleRPCMethod = async (socket,MsgRecvived) =>
+{
+    let isErrorCode=0;
+    let contentMsgRecvived = JSON.parse(MsgRecvived.Content)
+    const RoomName = await usersMan.Users[MsgRecvived.UserID].inRoom;
+
+    let msg = MSG.CreateMsg(messageTypes.RPCMETHODRES,contentMsgRecvived,isErrorCode,DEBUGMODE,1)
+    roomsMan.BroadcastMsgToUsersInRoom(RoomName,    msg,    MsgRecvived.UserID);//changed except from jsonmsg.UserID-> null
+}
 module.exports = {
     HandleValidation,
     HandlePing,
     HandleCreateRoom,HandleJoinRoom,HandleLeaveRoom,
     HandleHostChange,HandleSceneChange,
     HandleObjectUnity,HandleObjectUnityUpdate,
+    HandleRPCMethod
   };

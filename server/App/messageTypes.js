@@ -19,6 +19,8 @@
   const RESSCENECHANGE ="responseSceneChange"
   const UNITYOBJECTUPDATE="transformUpdate"
   const UNITYOBJECTUPDATERES="responeTransformUpdate"
+  const RPCMETHOD="rpcMethod"
+  const RPCMETHODRES="rpcMethodResponse"
 /// <summary>
 /// these messages are used check latency.
 /// </summary>
@@ -95,5 +97,7 @@ module.exports = {
     RESSCENECHANGE,
     SCENECHANGE,
     UNITYOBJECTUPDATE,
-    UNITYOBJECTUPDATERES
+    UNITYOBJECTUPDATERES,
+    RPCMETHOD,
+    RPCMETHODRES
   };
