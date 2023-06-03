@@ -19,7 +19,7 @@ public class UnityMultiObjectTransform : MonoBehaviour
 
     private bool isSendingTransform = false;
     private int maxUpdatesPerSec = 60;
-    private float smoothSpeed = 10f;
+    private float smoothSpeed = 100f;
 
 
     public void Setup(UnityMultiNetworking multiNetworking, UnityMultiObject Obj)

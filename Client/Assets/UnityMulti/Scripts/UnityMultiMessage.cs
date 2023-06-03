@@ -23,6 +23,8 @@ public class MessageType
     public const string ADD_UNITY_OBJECT_RESPONSE = "responseAddUnityObject";
     public const string TRANSFORM_UPDATE = "transformUpdate";
     public const string TRANSFORM_UPDATE_RESPONSE = "responeTransformUpdate";
+    public const string RPC_METHOD = "rpcMethod";
+    public const string RPC_METHOD_RESPONSE = "rpcMethodResponse";
 
     public const string CONNECT = "connect";
     public const string DISCONNECT = "disconnect";

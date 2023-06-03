@@ -62,9 +62,11 @@
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiRoom.cs" />
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiNetworking.cs" />
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiUser.cs" />
+    <Compile Include="Assets\UnityMulti\Scripts\UnityMultiCustomConverters.cs" />
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiMessage.cs" />
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiSerializer.cs" />
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiErrorHandler.cs" />
+    <Compile Include="Assets\UnityMulti\Scripts\UnityMultiAttributes.cs" />
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiNetworkingCallbacks.cs" />
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiObject.cs" />
     <Compile Include="Assets\UnityMulti\Example\TestObjMovement.cs" />

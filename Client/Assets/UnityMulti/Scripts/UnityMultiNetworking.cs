@@ -5,6 +5,8 @@ using Newtonsoft.Json;
 using System.Collections;
 using UnityEngine.SceneManagement;
 using System.Threading.Tasks;
+using System.Reflection;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(UnityMainThreadDispatcher))]
 public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDisposable
@@ -310,8 +312,8 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
                 case MessageType.TRANSFORM_UPDATE_RESPONSE:
                     UpdateObjectTransform(serverMessage);
                     break;
-                case MessageType.SERVER_MESSAGE:
-                    // handle server message
+                case MessageType.RPC_METHOD_RESPONSE:
+                    HandleRPC(serverMessage);
                     break;
                 default:
                     if (MessageType.CUSTOM.Contains(serverMessage.Type))
@@ -465,9 +467,6 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         }
 
         UnityMultiTransformInfo transformUpdate = JsonConvert.DeserializeObject<UnityMultiTransformInfo>(serverMessage.Content);
-
-        string username = room.FindUserById(transformUpdate.OwnerID).Username;
-        //"mulitNetworking/"+username+"/"+
         GameObject temp = GameObject.Find(transformUpdate.ObjName);
         if(temp == null)
         {
@@ -475,6 +474,117 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             return;
         }
         temp.GetComponent<UnityMultiObjectTransform>().UpdateTransform(transformUpdate);
+    }
+
+    public void RPC(GameObject gameObject, string methodName, params object[] parameters)
+    {
+        MethodInfo myMethod = GetMethodInfo(gameObject, methodName);
+
+        if(myMethod == null)
+        {
+            Debug.Log("Couldn't find given method: '" + methodName + "'.");
+            return;
+        }
+
+        Dictionary<string, object> jsonObject = new Dictionary<string, object>();
+        jsonObject["parameters"] = parameters;
+
+        JsonSerializerSettings settings = new JsonSerializerSettings
+        {
+            Converters = new List<JsonConverter>
+                {
+                    new Vector3Converter(),
+                    new QuaternionConverter(),
+                    new ColorConverter()
+                }
+        };
+
+        UnityMultiRPCInfo newRPC = new UnityMultiRPCInfo(methodName, parameters, gameObject.name);
+        Message newRPCMessage = new Message(MessageType.RPC_METHOD, JsonConvert.SerializeObject(newRPC, settings));
+        SendMessage(newRPCMessage);
+    }
+
+    private async void HandleRPC(Message serverMessage)
+    {
+        while (!room.isSceneLoaded)
+        {
+            await Task.Yield();
+        }
+
+        JsonSerializerSettings settings = new JsonSerializerSettings
+        {
+            Converters = new List<JsonConverter>
+                {
+                    new Vector3Converter(),
+                    new QuaternionConverter(),
+                    new ColorConverter(),
+                    new UnityMultiRPCInfoConverter()
+                }
+        };
+
+        UnityMultiRPCInfo rpc = JsonConvert.DeserializeObject<UnityMultiRPCInfo>(serverMessage.Content, settings);
+        GameObject obj = GameObject.Find(rpc.ObjName);
+
+        if(obj == null)
+        {
+            Debug.Log("Couldn't find object with given name: '" + rpc.ObjName + "'.");
+            return;
+        }
+
+        Component[] components = obj.GetComponents<Component>();
+
+        foreach (Component component in components)
+        {
+            Type type = component.GetType();
+
+            MethodInfo methodToRun = type.GetMethod(rpc.MethodName);
+
+            if (methodToRun != null)
+            {
+                if (methodToRun.GetCustomAttributes(typeof(UnityMultiRPC), true).Length > 0)
+                {
+                    ParameterInfo[] methodParameters = methodToRun.GetParameters();
+                    object[] convertedParameters = new object[methodParameters.Length];
+
+                    for (int i = 0; i < methodParameters.Length; i++)
+                    {
+                        Type parameterType = methodParameters[i].ParameterType;
+
+                        // Handle conversion for specific parameter types
+                        if (parameterType == typeof(Color))
+                        {
+                            Color colorParameter = JsonConvert.DeserializeObject<Color>(rpc.Parameters[i].ToString(), settings);
+                            convertedParameters[i] = colorParameter;
+                        }
+                        else if (parameterType == typeof(Vector3))
+                        {
+                            Vector3 vectorParameter = JsonConvert.DeserializeObject<Vector3>(rpc.Parameters[i].ToString(), settings);
+                            convertedParameters[i] = vectorParameter;
+                        }
+                        else if (parameterType == typeof(Quaternion))
+                        {
+                            Quaternion vectorParameter = JsonConvert.DeserializeObject<Quaternion>(rpc.Parameters[i].ToString(), settings);
+                            convertedParameters[i] = vectorParameter;
+                        }
+                        else
+                        {
+                            // Handle other parameter types as needed
+                            // ...
+                            convertedParameters[i] = rpc.Parameters[i];
+                        }
+                    }
+
+                    methodToRun.Invoke(component, convertedParameters);
+                    return;
+                }
+                else
+                {
+                    Debug.Log(methodToRun.Name + " doesn't own [UnityMultiRPC] attribute.");
+                }
+            }
+        }
+
+        Debug.Log(obj.name + " doesn't own method of name '" + rpc.MethodName + "'.");
     }
 
     #endregion
@@ -555,6 +665,24 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         isInRoom = value;
     }
 
+    public MethodInfo GetMethodInfo(GameObject gameObject, string methodName)
+    {
+        Component[] components = gameObject.GetComponents<Component>();
+
+        foreach (Component component in components)
+        {
+            Type type = component.GetType();
+            MethodInfo methodInfo = type.GetMethod(methodName);
+
+            if (methodInfo != null)
+            {
+                return methodInfo;
+            }
+        }
+
+        return null;
+    }
+
     #region eventActions
     public void InvokeErrorCodes(ErrorCode code)
     {
@@ -590,4 +718,24 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     }
 
     #endregion
+}
+
+public class UnityMultiRPCInfo
+{
+    public string MethodName;
+
+    [JsonProperty("Parameters")]
+    public object[] Parameters;
+    public string ObjName;
+
+    public UnityMultiRPCInfo()
+    {
+    }
+
+    public UnityMultiRPCInfo(string MethodName, object[] Parameters, string ObjName)
+    {
+        this.MethodName = MethodName;
+        this.Parameters = Parameters;
+        this.ObjName = ObjName;
+    }
 }

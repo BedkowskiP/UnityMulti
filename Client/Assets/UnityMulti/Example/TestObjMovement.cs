@@ -5,10 +5,12 @@ using UnityEngine;
 public class TestObjMovement : MonoBehaviour
 {
     UnityMultiObject obj;
+    private Renderer objectRenderer;
 
     void Start()
     {
-        obj = this.gameObject.GetComponent<UnityMultiObject>();
+        objectRenderer = GetComponent<Renderer>();
+        obj = GetComponent<UnityMultiObject>();
     }
 
     // Update is called once per frame
@@ -16,6 +18,10 @@ public class TestObjMovement : MonoBehaviour
     {
         if (obj.IsMine())
         {
+            if (Input.GetKeyDown(KeyCode.F))
+            {
+                RollRandomColor();
+            }
             Movement();
         }
     }
@@ -26,5 +32,22 @@ public class TestObjMovement : MonoBehaviour
         float verticalInput = Input.GetAxis("Vertical");
 
         transform.Translate(new Vector3(horizontalInput, 0, verticalInput) * 3f * Time.deltaTime);
+    }
+
+    private void RollRandomColor()
+    {
+        float r = Random.value;
+        float g = Random.value;
+        float b = Random.value;
+
+        Color randomColor = new Color(r, g, b);
+
+        obj.RunRPC("ChangeColor", randomColor);
+    }
+
+    [UnityMultiRPC]
+    public void ChangeColor(Color color)
+    {
+        objectRenderer.material.color = color;
     }
 }
