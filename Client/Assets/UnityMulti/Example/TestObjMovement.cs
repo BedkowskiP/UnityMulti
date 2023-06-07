@@ -42,7 +42,7 @@ public class TestObjMovement : MonoBehaviour
 
         Color randomColor = new Color(r, g, b);
 
-        obj.RunRPC("ChangeColor", randomColor);
+        obj.RunRPC("ChangeColor", RPCTarget.Buffered, randomColor);
     }
 
     [UnityMultiRPC]

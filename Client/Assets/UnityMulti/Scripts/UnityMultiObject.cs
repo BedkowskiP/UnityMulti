@@ -95,9 +95,9 @@ public class UnityMultiObject : MonoBehaviour
         return ObjectID;
     }
 
-    public void RunRPC(string methodName, params object[] parameters)
+    public void RunRPC(string methodName, RPCTarget target, params object[] parameters )
     {
-        multiNetworking.RPC(this.gameObject, methodName, parameters);
+        multiNetworking.RPC(this.gameObject, methodName, parameters, target);
     }
 }
 

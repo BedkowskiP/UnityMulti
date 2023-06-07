@@ -476,7 +476,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         temp.GetComponent<UnityMultiObjectTransform>().UpdateTransform(transformUpdate);
     }
 
-    public void RPC(GameObject gameObject, string methodName, params object[] parameters)
+    public void RPC(GameObject gameObject, string methodName, object[] parameters, RPCTarget target)
     {
         MethodInfo myMethod = GetMethodInfo(gameObject, methodName);
 
@@ -499,7 +499,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
                 }
         };
 
-        UnityMultiRPCInfo newRPC = new UnityMultiRPCInfo(methodName, parameters, gameObject.name);
+        UnityMultiRPCInfo newRPC = new UnityMultiRPCInfo(methodName, parameters, gameObject.name, target);
         Message newRPCMessage = new Message(MessageType.RPC_METHOD, JsonConvert.SerializeObject(newRPC, settings));
         SendMessage(newRPCMessage);
     }
@@ -720,22 +720,30 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     #endregion
 }
 
-public class UnityMultiRPCInfo
+public enum RPCTarget
 {
+    Buffered = 0,
+    All = 1
+}
+
+public class UnityMultiRPCInfo
+{ 
     public string MethodName;
 
     [JsonProperty("Parameters")]
     public object[] Parameters;
     public string ObjName;
+    public RPCTarget Target;
 
     public UnityMultiRPCInfo()
     {
     }
 
-    public UnityMultiRPCInfo(string MethodName, object[] Parameters, string ObjName)
+    public UnityMultiRPCInfo(string MethodName, object[] Parameters, string ObjName, RPCTarget Target)
     {
         this.MethodName = MethodName;
         this.Parameters = Parameters;
         this.ObjName = ObjName;
+        this.Target = Target;
     }
 }
