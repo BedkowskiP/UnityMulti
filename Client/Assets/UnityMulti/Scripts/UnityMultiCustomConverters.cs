@@ -70,6 +70,8 @@ public class UnityMultiRPCInfoConverter : JsonConverter
         rpcInfo.MethodName = jsonObject["MethodName"].ToString();
         rpcInfo.Parameters = jsonObject["Parameters"].ToObject<object[]>();
         rpcInfo.ObjName = jsonObject["ObjName"].ToString();
+        int targetValue = jsonObject["Target"].Value<int>();
+        rpcInfo.Target = (RPCTarget)targetValue;
         return rpcInfo;
     }
 

@@ -31,7 +31,7 @@ public class TestObjMovement : MonoBehaviour
         float horizontalInput = Input.GetAxis("Horizontal");
         float verticalInput = Input.GetAxis("Vertical");
 
-        transform.Translate(new Vector3(horizontalInput, 0, verticalInput) * 3f * Time.deltaTime);
+        transform.Translate(new Vector3(horizontalInput, verticalInput, 0) * 3f * Time.deltaTime);
     }
 
     private void RollRandomColor()

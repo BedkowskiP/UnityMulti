@@ -18,6 +18,8 @@ public class CreateConnection : UnityMultiNetworkingCallbacks
     private string s_roomName;
     private string s_username;
 
+    public Text isConnected;
+
     private void Awake()
     {
         b_join.enabled = false;
@@ -55,5 +57,11 @@ public class CreateConnection : UnityMultiNetworkingCallbacks
         b_create.enabled = true;
         b_join.enabled = true;
         b_connect.enabled = false;
+    }
+
+    public override void OnClientConnected()
+    {
+        base.OnClientConnected();
+        isConnected.text = "Connected";
     }
 }
