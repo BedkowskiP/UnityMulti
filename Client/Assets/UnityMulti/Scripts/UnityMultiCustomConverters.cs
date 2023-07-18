@@ -1,7 +1,22 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
+
+public static class CustomConverters
+{
+    public static JsonSerializerSettings settings = new JsonSerializerSettings
+    {
+        Converters = new List<JsonConverter>
+            {
+                new Vector3Converter(),
+                new QuaternionConverter(),
+                new ColorConverter(),
+                new UnityMultiRPCInfoConverter()
+            }
+    };
+}
 
 public class Vector3Converter : JsonConverter<Vector3>
 {
@@ -77,6 +92,17 @@ public class UnityMultiRPCInfoConverter : JsonConverter
 
     public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
     {
-        throw new NotImplementedException();
+        UnityMultiRPCInfo rpcInfo = (UnityMultiRPCInfo)value;
+
+        JToken parametersToken = JToken.FromObject(rpcInfo.Parameters, JsonSerializer.Create(CustomConverters.settings));
+
+        JObject jsonObject = new JObject();
+        jsonObject["MethodName"] = rpcInfo.MethodName;
+        jsonObject["Parameters"] = parametersToken;
+        jsonObject["ObjName"] = rpcInfo.ObjName;
+        jsonObject["Target"] = (int)rpcInfo.Target;
+
+        jsonObject.WriteTo(writer);
     }
+
 }

@@ -6,9 +6,9 @@ public class UnityMultiObject : MonoBehaviour
     public void SetParams(UnityMultiNetworking multiNetworking, UnityMultiObjectInfo objectInfo)
     {
         this.multiNetworking = multiNetworking;
-        this.position = objectInfo.Position.GetVec3();
-        this.rotation = objectInfo.Rotation.GetQuat();
-        this.scale = objectInfo.Scale.GetVec3();
+        this.position = objectInfo.Position;
+        this.rotation = objectInfo.Rotation;
+        this.scale = objectInfo.Scale;
         this.ObjectID = objectInfo.ObjectID;
         this.Owner = objectInfo.Owner;
     }
@@ -107,14 +107,14 @@ public class UnityMultiObjectInfo
     public UnityMultiObjectInfo(string prefabName, Vector3 position, Quaternion rotation, Vector3 scale, string Owner)
     {
         this.PrefabName = prefabName;
-        this.Position = new ObjVec3(position);
-        this.Rotation = new ObjQuat(rotation);
-        this.Scale = new ObjVec3(scale);
+        this.Position = position;
+        this.Rotation = rotation;
+        this.Scale = scale;
         this.Owner = Owner;
     }
 
     [JsonConstructor]
-    public UnityMultiObjectInfo(string PrefabName, ObjVec3 Position, ObjQuat Rotation, ObjVec3 Scale, string Owner, string ObjectID)
+    public UnityMultiObjectInfo(string PrefabName, Vector3 Position, Quaternion Rotation, Vector3 Scale, string Owner, string ObjectID)
     {
         this.PrefabName = PrefabName;
         this.Position = Position;
@@ -128,65 +128,8 @@ public class UnityMultiObjectInfo
     public string? ObjectID { get; private set; }
     public string? Owner { get; private set; }
 
-    public ObjVec3 Position { get; private set; }
-    public ObjQuat Rotation { get; private set; }
-    public ObjVec3 Scale { get; private set; }
+    public Vector3 Position { get; private set; }
+    public Quaternion Rotation { get; private set; }
+    public Vector3 Scale { get; private set; }
 
-}
-
-public class ObjVec3
-{
-    public float x { get; set; }
-    public float y { get; set; }
-    public float z { get; set; }
-
-    public ObjVec3(Vector3 vec)
-    {
-        this.x = vec.x;
-        this.y = vec.y;
-        this.z = vec.z;
-    }
-
-    [JsonConstructor]
-    public ObjVec3(float x, float y, float z)
-    {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-    }
-
-    public Vector3 GetVec3()
-    {
-        return new Vector3(x, y, z);
-    }
-}
-
-public class ObjQuat
-{
-    public float x { get; set; }
-    public float y { get; set; }
-    public float z { get; set; }
-    public float w { get; set; }
-
-    public ObjQuat(Quaternion quat)
-    {
-        this.x = quat.x;
-        this.y = quat.y;
-        this.z = quat.z;
-        this.w = quat.w;
-    }
-
-    [JsonConstructor]
-    public ObjQuat(float x, float y, float z, float w)
-    {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-        this.w = w;
-    }
-
-    public Quaternion GetQuat()
-    {
-        return new Quaternion(x, y, z, w);
-    }
 }

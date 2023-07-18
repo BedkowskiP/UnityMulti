@@ -116,7 +116,7 @@ public class UnityMultiObjectTransform : MonoBehaviour
     private void SendNewTransform()
     {
         UnityMultiTransformInfo transformInfo = new UnityMultiTransformInfo(this.name, Obj.GetObjID(), positionToSend, scaleToSend, rotationToSend);
-        Message newTransform = new Message(MessageType.TRANSFORM_UPDATE, JsonConvert.SerializeObject(transformInfo));
+        Message newTransform = new Message(MessageType.TRANSFORM_UPDATE, JsonConvert.SerializeObject(transformInfo, CustomConverters.settings));
         multiNetworking.SendMessage(newTransform);
     }
 
@@ -132,17 +132,17 @@ public class UnityMultiObjectTransform : MonoBehaviour
     {
         if (updatePosition)
         {
-            targetPosition = transformUpdate.Position.GetVec3();
+            targetPosition = transformUpdate.Position;
         }
 
         if (updateRotation)
         {
-            targetRotation = transformUpdate.Rotation.GetQuat();
+            targetRotation = transformUpdate.Rotation;
         }
 
         if (updateScale)
         {
-            targetScale = transformUpdate.Scale.GetVec3();
+            targetScale = transformUpdate.Scale;
         }
     }
 }
@@ -150,9 +150,9 @@ public class UnityMultiObjectTransform : MonoBehaviour
 #nullable enable
 public class UnityMultiTransformInfo
 {
-    public ObjVec3 Position { get; private set; }
-    public ObjQuat Rotation { get; private set; }
-    public ObjVec3 Scale { get; private set; }
+    public Vector3 Position { get; private set; }
+    public Quaternion Rotation { get; private set; }
+    public Vector3 Scale { get; private set; }
 
     public string ObjName { get; private set; }
     public string ObjID { get; private set; }
@@ -160,9 +160,9 @@ public class UnityMultiTransformInfo
 
     public UnityMultiTransformInfo(string ObjName, string ObjID, Vector3 position, Vector3 scale, Quaternion rotation)
     {
-        this.Position = new ObjVec3(position);
-        this.Rotation = new ObjQuat(rotation);
-        this.Scale = new ObjVec3(scale);
+        this.Position = position;
+        this.Rotation = rotation;
+        this.Scale = scale;
         this.ObjName = ObjName;
         this.ObjID = ObjID;
     }
@@ -170,9 +170,9 @@ public class UnityMultiTransformInfo
     [JsonConstructor]
     public UnityMultiTransformInfo(string ObjName, string ObjID, string OwnerID, Vector3 position, Vector3 scale, Quaternion rotation)
     {
-        this.Position = new ObjVec3(position);
-        this.Rotation = new ObjQuat(rotation);
-        this.Scale = new ObjVec3(scale);
+        this.Position = position;
+        this.Rotation = rotation;
+        this.Scale = scale;
         this.ObjName = ObjName;
         this.ObjID = ObjID;
         this.OwnerID = OwnerID;

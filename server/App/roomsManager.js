@@ -224,31 +224,31 @@ class ObjectUnity
 {
     static PositionUnity = class
     {
-        constructor(X,Y,Z)
+        constructor(x,y,z)
         {
-            this.x=X
-            this.y=Y
-            this.z=Z
+            this.x=x
+            this.y=y
+            this.z=z
         } 
     }
     static RotationUnity = class
     {
-        constructor(X,Y,Z,W)
+        constructor(x,y,z,w)
         {
-            this.x=X
-            this.y=Y
-            this.z=Z
-            this.w=W
+            this.x=x
+            this.y=y
+            this.z=z
+            this.w=w
         }
     }
     static ScaleUnity = class
     {
-        constructor(X,Y,Z)
+        constructor(x,y,z)
         {
-            this.x=X
-            this.y=Y
-            this.z=Z
-        }
+            this.x=x
+            this.y=y
+            this.z=z
+        } 
         
     }
     constructor(PREFAB,OWNER,POS,ROT,SCA,ID)

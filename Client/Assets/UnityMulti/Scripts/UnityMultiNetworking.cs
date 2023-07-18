@@ -279,7 +279,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
     private async void OnServerMessage(string message)
     {
-            Message serverMessage = JsonConvert.DeserializeObject<Message>(message);
+            Message serverMessage = JsonConvert.DeserializeObject<Message>(message, CustomConverters.settings);
             switch (serverMessage.Type)
             {
                 case MessageType.PONG:
@@ -423,7 +423,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             {
 
                 UnityMultiObjectInfo temp = new UnityMultiObjectInfo(prefabName, position, rotation, scale, user.UserID);
-                Message objectMessage = new Message(MessageType.ADD_UNITY_OBJECT, JsonConvert.SerializeObject(temp));
+                Message objectMessage = new Message(MessageType.ADD_UNITY_OBJECT, JsonConvert.SerializeObject(temp, CustomConverters.settings));
                 SendMessage(objectMessage);
             }
             Resources.UnloadUnusedAssets();
@@ -438,7 +438,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             await Task.Yield();
         }
 
-        UnityMultiObjectInfo temp = JsonConvert.DeserializeObject<UnityMultiObjectInfo>(serverMessage.Content);
+        UnityMultiObjectInfo temp = JsonConvert.DeserializeObject<UnityMultiObjectInfo>(serverMessage.Content, CustomConverters.settings);
 
         GameObject loadedObj = Resources.Load<GameObject>(temp.PrefabName);
         GameObject createdObj = null;
@@ -448,8 +448,8 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         try
         {
             GameObject parent = room.GetUserObjByID(temp.Owner);
-            if (parent == null) createdObj = Instantiate(loadedObj, temp.Position.GetVec3(), temp.Rotation.GetQuat());
-            else createdObj = Instantiate(loadedObj, temp.Position.GetVec3(), temp.Rotation.GetQuat(), parent.transform);
+            if (parent == null) createdObj = Instantiate(loadedObj, temp.Position, temp.Rotation);
+            else createdObj = Instantiate(loadedObj, temp.Position, temp.Rotation, parent.transform);
             createdObj.name = "MultiObject(" + temp.ObjectID + ")";
             if (parent != null) parent.GetComponent<UnityMultiUser>().UserObjectList.Add(createdObj);
         }
@@ -466,7 +466,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             await Task.Yield();
         }
 
-        UnityMultiTransformInfo transformUpdate = JsonConvert.DeserializeObject<UnityMultiTransformInfo>(serverMessage.Content);
+        UnityMultiTransformInfo transformUpdate = JsonConvert.DeserializeObject<UnityMultiTransformInfo>(serverMessage.Content, CustomConverters.settings);
         GameObject temp = GameObject.Find(transformUpdate.ObjName);
         if(temp == null)
         {
@@ -489,18 +489,8 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         Dictionary<string, object> jsonObject = new Dictionary<string, object>();
         jsonObject["parameters"] = parameters;
 
-        JsonSerializerSettings settings = new JsonSerializerSettings
-        {
-            Converters = new List<JsonConverter>
-                {
-                    new Vector3Converter(),
-                    new QuaternionConverter(),
-                    new ColorConverter()
-                }
-        };
-
         UnityMultiRPCInfo newRPC = new UnityMultiRPCInfo(methodName, parameters, gameObject.name, target);
-        Message newRPCMessage = new Message(MessageType.RPC_METHOD, JsonConvert.SerializeObject(newRPC, settings));
+        Message newRPCMessage = new Message(MessageType.RPC_METHOD, JsonConvert.SerializeObject(newRPC, CustomConverters.settings));
         SendMessage(newRPCMessage);
     }
 
@@ -511,18 +501,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             await Task.Yield();
         }
 
-        JsonSerializerSettings settings = new JsonSerializerSettings
-        {
-            Converters = new List<JsonConverter>
-                {
-                    new Vector3Converter(),
-                    new QuaternionConverter(),
-                    new ColorConverter(),
-                    new UnityMultiRPCInfoConverter()
-                }
-        };
-
-        UnityMultiRPCInfo rpc = JsonConvert.DeserializeObject<UnityMultiRPCInfo>(serverMessage.Content, settings);
+        UnityMultiRPCInfo rpc = JsonConvert.DeserializeObject<UnityMultiRPCInfo>(serverMessage.Content, CustomConverters.settings);
         GameObject obj = GameObject.Find(rpc.ObjName);
 
         if(obj == null)
@@ -553,17 +532,17 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
                         // Handle conversion for specific parameter types
                         if (parameterType == typeof(Color))
                         {
-                            Color colorParameter = JsonConvert.DeserializeObject<Color>(rpc.Parameters[i].ToString(), settings);
+                            Color colorParameter = JsonConvert.DeserializeObject<Color>(rpc.Parameters[i].ToString(), CustomConverters.settings);
                             convertedParameters[i] = colorParameter;
                         }
                         else if (parameterType == typeof(Vector3))
                         {
-                            Vector3 vectorParameter = JsonConvert.DeserializeObject<Vector3>(rpc.Parameters[i].ToString(), settings);
+                            Vector3 vectorParameter = JsonConvert.DeserializeObject<Vector3>(rpc.Parameters[i].ToString(), CustomConverters.settings);
                             convertedParameters[i] = vectorParameter;
                         }
                         else if (parameterType == typeof(Quaternion))
                         {
-                            Quaternion vectorParameter = JsonConvert.DeserializeObject<Quaternion>(rpc.Parameters[i].ToString(), settings);
+                            Quaternion vectorParameter = JsonConvert.DeserializeObject<Quaternion>(rpc.Parameters[i].ToString(), CustomConverters.settings);
                             convertedParameters[i] = vectorParameter;
                         }
                         else
@@ -596,7 +575,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         {
             message.Timestamp = GetTimeNow();
             message.UserID = userData.UserID;
-            ws.Send(JsonConvert.SerializeObject(message));
+            ws.Send(JsonConvert.SerializeObject(message, CustomConverters.settings));
         }
     }
 

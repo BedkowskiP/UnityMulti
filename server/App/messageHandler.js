@@ -155,9 +155,9 @@ const HandleObjectUnity = async (socket,MsgRecvived) =>
         {
             PrefabName:content.PrefabName,                  
             ObjectID:reuslt.ObjectID,
-            Position:{X:content.Position.x,   Y:content.Position.y,     Z:content.Position.z},
-            Rotation:{X:content.Rotation.x,   Y:content.Rotation.y,     Z:content.Rotation.z,     W:content.Rotation.w},
-            Scale:{X:content.Scale.x,     Y:content.Scale.y,    Z:content.Scale.z},
+            Position:{x:content.Position.x,   y:content.Position.y,     z:content.Position.z},
+            Rotation:{x:content.Rotation.x,   y:content.Rotation.y,     z:content.Rotation.z,     w:content.Rotation.w},
+            Scale:{x:content.Scale.x,     y:content.Scale.y,    z:content.Scale.z},
             Owner:content.Owner
         };
 
