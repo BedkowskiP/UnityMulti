@@ -325,6 +325,7 @@ public class UnityMultiRoom : UnityMultiSerializer<UnityMultiRoomHelper>
     public void HandleLeaveRoom()
     {
         multiNetworking.SetInRoom(false);
+
         multiNetworking.InvokeRoomE("leaveRoom", Settings.RoomName);
     }
 

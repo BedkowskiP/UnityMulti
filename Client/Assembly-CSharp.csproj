@@ -70,11 +70,12 @@
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiAttributes.cs" />
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiNetworkingCallbacks.cs" />
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiObject.cs" />
-    <Compile Include="Assets\UnityMulti\Example\TestObjMovement.cs" />
+    <Compile Include="Assets\UnityMulti\Example\ExampleObject.cs" />
     <Compile Include="Assets\UnityMulti\Scripts\UnityMultiObjectTransform.cs" />
     <Compile Include="Assets\UnityMulti\Example\CreateConnection.cs" />
     <Compile Include="Assets\UnityMulti\Example\CreateObjectOnNewScene.cs" />
     <Compile Include="Assets\Test1.cs" />
+    <Compile Include="Assets\UnityMulti\Example\ExampleEventHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\UnityMulti\Libraries\websocket-sharp.dll" />

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using WebSocketSharp;
 
 public class CreateConnection : UnityMultiNetworkingCallbacks
 {
@@ -11,7 +12,9 @@ public class CreateConnection : UnityMultiNetworkingCallbacks
     public Button b_create;
     public Button b_join;
     public Button b_connect;
+    public Button b_disconnect;
 
+    public InputField i_ip;
     public InputField i_roomName;
     public InputField i_username;
 
@@ -22,8 +25,10 @@ public class CreateConnection : UnityMultiNetworkingCallbacks
 
     private void Awake()
     {
-        b_join.enabled = false;
-        b_create.enabled = false;
+        b_join.interactable = false;
+        b_create.interactable = false;
+        b_disconnect.interactable = false;
+        b_connect.interactable = true;
     }
 
     public void JoinRoom()
@@ -51,17 +56,56 @@ public class CreateConnection : UnityMultiNetworkingCallbacks
 
     public void Connect()
     {
+        url = i_ip.text;
         s_username = i_username.text;
         multiNetworking.ConnectToServer(url, s_username);
 
-        b_create.enabled = true;
-        b_join.enabled = true;
-        b_connect.enabled = false;
+        b_create.interactable = true;
+        b_join.interactable = true;
+        b_connect.interactable = false;
+        b_disconnect.interactable = true;
     }
 
-    public override void OnClientConnected()
+    public void Disconnect()
     {
-        base.OnClientConnected();
-        isConnected.text = "Connected";
+        multiNetworking.Disconnect();
+    }
+
+    public override void OnClientDisconnected(CloseEventArgs close)
+    {
+        base.OnClientDisconnected(close);
+        Debug.Log("dis");
+    }
+
+    private IEnumerator ConnectedCor()
+    {
+        yield return new WaitForSeconds(0.5f);
+        while (true)
+        {
+            if (multiNetworking.IsConnected)
+            {
+                isConnected.text = "Connected";
+                isConnected.color = Color.green;
+                b_disconnect.interactable = true;
+                b_connect.interactable = false;
+                b_join.interactable = true;
+                b_create.interactable = true;
+            }
+            else
+            {
+                isConnected.text = "Disconnected";
+                isConnected.color = Color.red;
+                b_disconnect.interactable = false;
+                b_connect.interactable = true;
+                b_join.interactable = false;
+                b_create.interactable = false;
+            }
+            yield return new WaitForSeconds(0.5f);
+        }
+    }
+
+    private void Start()
+    {
+        StartCoroutine(ConnectedCor());
     }
 }

@@ -529,7 +529,6 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
                     {
                         Type parameterType = methodParameters[i].ParameterType;
 
-                        // Handle conversion for specific parameter types
                         if (parameterType == typeof(Color))
                         {
                             Color colorParameter = JsonConvert.DeserializeObject<Color>(rpc.Parameters[i].ToString(), CustomConverters.settings);
@@ -547,8 +546,6 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
                         }
                         else
                         {
-                            // Handle other parameter types as needed
-                            // ...
                             convertedParameters[i] = rpc.Parameters[i];
                         }
                     }
@@ -559,6 +556,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
                 else
                 {
                     Debug.Log(methodToRun.Name + " doesn't own [UnityMultiRPC] attribute.");
+                    return;
                 }
             }
         }
@@ -680,6 +678,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
                 break;
             case "leaveRoom":
                 LeaveRoomEvent?.Invoke(roomName);
+                SetupRoom();
                 break;
             default:
                 break;
