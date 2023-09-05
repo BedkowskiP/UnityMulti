@@ -99,6 +99,8 @@ public class UnityMultiObject : MonoBehaviour
     {
         multiNetworking.RPC(this.gameObject, methodName, parameters, target);
     }
+
+
 }
 
 #nullable enable

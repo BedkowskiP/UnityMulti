@@ -11,38 +11,53 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
     public UnityMultiNetworking multiNetworking;
     
     public List<string> customMessageTypes { get; private set; } = new List<string>();
+    private void OnEnable()
+    {
+        RegisterCallbacks();
+    }
 
-    private void Awake()
+    private void OnDisable()
+    {
+        UnregisterCallbacks();
+    }
+
+    private void RegisterCallbacks()
     {
         multiNetworking = UnityMultiNetworking.Instance;
-        SetupEvents();
-        
-    }
-
-    private void Update()
-    {
-        if (multiNetworking == null)
+        if (multiNetworking != null)
         {
-            multiNetworking = UnityMultiNetworking.Instance;
-            SetupEvents();
+            multiNetworking.CustomMessageEvent += OnCustomMessage;
+            multiNetworking.ClientErrorEvent += OnClientError;
+            multiNetworking.ClientConnectedAndReadyEvent += OnClientConnected;
+            multiNetworking.ClientDisconnectedEvent += OnClientDisconnected;
+            multiNetworking.ConnectionStateChangeEvent += OnConnectionStateChange;
+            multiNetworking.InitialConnectionEvent += OnInitialConnection;
+            multiNetworking.MultiErrorEvent += OnValidationError;
+            multiNetworking.CreateRoomEvent += OnCreateRoom;
+            multiNetworking.JoinRoomEvent += OnJoinRoom;
+            multiNetworking.LeaveRoomEvent += OnLeaveRoom;
+            multiNetworking.ClientJoinEvent += OnClientJoin;
+            multiNetworking.ClientLeaveEvent += OnClientLeave;
         }
-        
     }
 
-    private void SetupEvents()
+    private void UnregisterCallbacks()
     {
-        multiNetworking.CustomMessageEvent += OnCustomMessage;
-        multiNetworking.ClientErrorEvent += OnClientError;
-        multiNetworking.ClientConnectedAndReadyEvent += OnClientConnected;
-        multiNetworking.ClientDisconnectedEvent += OnClientDisconnected;
-        multiNetworking.ConnectionStateChangeEvent += OnConnectionStateChange;
-        multiNetworking.InitialConnectionEvent += OnInitialConnection;
-        multiNetworking.MultiErrorEvent += OnValidationError;
-        multiNetworking.CreateRoomEvent += OnCreateRoom;
-        multiNetworking.JoinRoomEvent += OnJoinRoom;
-        multiNetworking.LeaveRoomEvent += OnLeaveRoom;
-        multiNetworking.ClientJoinEvent += OnClientJoin;
-        multiNetworking.ClientLeaveEvent += OnClientLeave;
+        if (multiNetworking != null)
+        {
+            multiNetworking.CustomMessageEvent -= OnCustomMessage;
+            multiNetworking.ClientErrorEvent -= OnClientError;
+            multiNetworking.ClientConnectedAndReadyEvent -= OnClientConnected;
+            multiNetworking.ClientDisconnectedEvent -= OnClientDisconnected;
+            multiNetworking.ConnectionStateChangeEvent -= OnConnectionStateChange;
+            multiNetworking.InitialConnectionEvent -= OnInitialConnection;
+            multiNetworking.MultiErrorEvent -= OnValidationError;
+            multiNetworking.CreateRoomEvent -= OnCreateRoom;
+            multiNetworking.JoinRoomEvent -= OnJoinRoom;
+            multiNetworking.LeaveRoomEvent -= OnLeaveRoom;
+            multiNetworking.ClientJoinEvent -= OnClientJoin;
+            multiNetworking.ClientLeaveEvent -= OnClientLeave;
+        }
     }
 
     public virtual void OnClientError(ErrorEventArgs error)

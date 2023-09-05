@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 using System.Threading.Tasks;
 using System.Reflection;
 using System.Collections.Generic;
+using System.Threading;
 
 [RequireComponent(typeof(UnityMainThreadDispatcher))]
 public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDisposable
@@ -20,7 +21,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     private UnityMultiUser userData;
     private UnityMultiRoom room;
 
-    private volatile WebSocketState _webSocketState = WebSocketState.Connecting;
+    public volatile WebSocketState _webSocketState = WebSocketState.Connecting;
     public bool IsConnected => _webSocketState == WebSocketState.Open;
 
     public string startingScene;
@@ -84,6 +85,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         Destroy(room);
         room = gameObject.AddComponent<UnityMultiRoom>();
         room.AddNetworking(this);
+        
     }
 
     private void ResetInstance()
@@ -187,19 +189,21 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
         ws.OnClose += (sender, close) =>
         {
+            
             UnityMainThreadDispatcher.Instance().Enqueue(() => {
                 ConnectionState();
+                StopCoroutine(SendPing());
                 ClientDisconnectedEvent?.Invoke(close);
                 ws.Close();
                 ws = null;
-            
                 if (_autoReconnect && close.Code != 1000)
                 {
-
+                    
                     //CreateConnection();
                     //StartCoroutine(Reconnect(close));
                     StartCoroutine(ReconnectCor());
-                }
+                }            
+                
             });
         };
 
@@ -210,8 +214,19 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     {
         if (ws != null)
         {
-            ws.Close(1000, "Intentional disconnect");
-            ws = null;
+            try
+            {
+                ws.Close(1000, "Intentional disconnect");
+            }
+            catch (Exception ex)
+            {
+                // Handle any exceptions that might occur during the close operation.
+                Debug.LogError($"Error closing WebSocket: {ex.Message}");
+            }
+            finally
+            {
+                
+            }
         }
     }
 
@@ -567,6 +582,19 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     #endregion
 
     #region userActions
+
+    public void LoadLevel()
+    {
+        Debug.Log("Loading new level...");
+        foreach (GameObject obj in room.multiUserList)
+        {
+            Destroy(obj);
+        }
+        userData.UserObjectList = new List<GameObject>();
+        SetupRoom();
+        SceneManager.LoadSceneAsync(startingScene, LoadSceneMode.Single);
+    }
+
     public void SendMessage(Message message)
     {
         if (IsConnected)

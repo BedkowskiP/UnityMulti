@@ -68,6 +68,7 @@ public class UnityMultiUser : UnityMultiSerializer<UnityMultiUserHelper>
     {
         return new UnityMultiUserHelper(Username, UserID);
     }
+
 }
 
 public class UnityMultiUserHelper

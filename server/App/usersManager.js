@@ -47,7 +47,6 @@ const RemoveUser = async (UserID) =>
     catch(e)
     {
         return 300; //300 errorcode - couldnt delete user from Users list
-        //console.log("coudlnt remove User")
     }
 }
 class User

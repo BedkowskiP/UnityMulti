@@ -11,7 +11,7 @@ const logger = require('./logger')
 const DEBUGMODE= true;   //shows incoming msgs
 const TESTMODE = false;   //generate local users
 const server = new WebSocket.Server({
-  host: 'localhost',
+  host: '0.0.0.0',
   port: 8080
 });
 

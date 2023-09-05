@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using WebSocketSharp;
@@ -12,7 +13,6 @@ public class CreateConnection : UnityMultiNetworkingCallbacks
     public Button b_create;
     public Button b_join;
     public Button b_connect;
-    public Button b_disconnect;
 
     public InputField i_ip;
     public InputField i_roomName;
@@ -22,14 +22,6 @@ public class CreateConnection : UnityMultiNetworkingCallbacks
     private string s_username;
 
     public Text isConnected;
-
-    private void Awake()
-    {
-        b_join.interactable = false;
-        b_create.interactable = false;
-        b_disconnect.interactable = false;
-        b_connect.interactable = true;
-    }
 
     public void JoinRoom()
     {
@@ -56,56 +48,34 @@ public class CreateConnection : UnityMultiNetworkingCallbacks
 
     public void Connect()
     {
-        url = i_ip.text;
-        s_username = i_username.text;
+        if (i_ip.text == null || i_ip.text == "")
+            url = "ws://localhost:8080";
+        else url = i_ip.text;
+        if (i_username.text == null || i_username.text == "")
+            s_username = GenerateRandomUsername();
+        else s_username = i_username.text;
         multiNetworking.ConnectToServer(url, s_username);
-
-        b_create.interactable = true;
-        b_join.interactable = true;
-        b_connect.interactable = false;
-        b_disconnect.interactable = true;
     }
 
-    public void Disconnect()
+    public override void OnClientConnected()
     {
-        multiNetworking.Disconnect();
-    }
-
-    public override void OnClientDisconnected(CloseEventArgs close)
-    {
-        base.OnClientDisconnected(close);
-        Debug.Log("dis");
-    }
-
-    private IEnumerator ConnectedCor()
-    {
-        yield return new WaitForSeconds(0.5f);
-        while (true)
+        base.OnClientConnected();
+        if (isConnected != null)
         {
-            if (multiNetworking.IsConnected)
-            {
-                isConnected.text = "Connected";
-                isConnected.color = Color.green;
-                b_disconnect.interactable = true;
-                b_connect.interactable = false;
-                b_join.interactable = true;
-                b_create.interactable = true;
-            }
-            else
-            {
-                isConnected.text = "Disconnected";
-                isConnected.color = Color.red;
-                b_disconnect.interactable = false;
-                b_connect.interactable = true;
-                b_join.interactable = false;
-                b_create.interactable = false;
-            }
-            yield return new WaitForSeconds(0.5f);
+            isConnected.text = "Connected";
+            isConnected.color = Color.green;
+        }
+        else
+        {
+            Debug.LogWarning("The isConnected Text component is null or has been destroyed.");
         }
     }
 
-    private void Start()
+    private static System.Random random = new System.Random();
+    public static string GenerateRandomUsername()
     {
-        StartCoroutine(ConnectedCor());
+        const string chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+        return new string(Enumerable.Repeat(chars, 10)
+          .Select(s => s[random.Next(s.Length)]).ToArray());
     }
 }
