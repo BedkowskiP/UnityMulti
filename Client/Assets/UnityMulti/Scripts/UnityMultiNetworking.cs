@@ -67,6 +67,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
     public event RoomE CreateRoomEvent;
     public event RoomE JoinRoomEvent;
     public event RoomE LeaveRoomEvent;
+    public event RoomE RoomLoadedEvent;
 
     public delegate void RoomClientChangeE(UnityMultiUser user);
     public event RoomClientChangeE ClientJoinEvent;
@@ -583,7 +584,7 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
 
     #region userActions
 
-    public void LoadLevel()
+    public async Task LoadLevel(string SceneName)
     {
         Debug.Log("Loading new level...");
         foreach (GameObject obj in room.multiUserList)
@@ -591,8 +592,27 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
             Destroy(obj);
         }
         userData.UserObjectList = new List<GameObject>();
-        SetupRoom();
-        SceneManager.LoadSceneAsync(startingScene, LoadSceneMode.Single);
+        if (SceneManager.GetActiveScene().name != SceneName)
+        {
+            try
+            {
+                room.isSceneLoaded = false;
+                AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(SceneName, LoadSceneMode.Single);
+                while (!asyncLoad.isDone)
+                {
+                    await Task.Yield();
+                }
+                room.isSceneLoaded = true;
+            }
+            catch (Exception e)
+            {
+                Debug.Log(e);
+                Debug.Log("Unable to load scene: " + SceneName + "; Make sure the scene name is correct.");
+                LeaveRoom();
+                return;
+            }
+        }
+        else { room.isSceneLoaded = true; }
     }
 
     public void SendMessage(Message message)

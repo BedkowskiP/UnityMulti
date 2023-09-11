@@ -22,12 +22,12 @@ public class ExampleEventHandler : UnityMultiNetworkingCallbacks
         base.OnClientDisconnected(close);
         if(close.Code == 1000)
         {
-            multiNetworking.LoadLevel();
+            multiNetworking.LoadLevel("TutorialSceneOne");
         }
     }
     public override void OnLeaveRoom(string roomName)
     {
         base.OnLeaveRoom(roomName);
-        multiNetworking.LoadLevel();
+        multiNetworking.LoadLevel("TutorialSceneOne");
     }
 }

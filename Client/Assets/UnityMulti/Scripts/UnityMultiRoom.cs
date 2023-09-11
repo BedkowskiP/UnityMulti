@@ -71,7 +71,7 @@ public class UnityMultiRoom : UnityMultiSerializer<UnityMultiRoomHelper>
 
     public List<GameObject> multiUserList = new List<GameObject>();
 
-    public bool isSceneLoaded { get; private set; } = false;
+    public bool isSceneLoaded { get; set; } = false;
 
     public override void Deserialize(string obj)
     {
@@ -279,6 +279,7 @@ public class UnityMultiRoom : UnityMultiSerializer<UnityMultiRoomHelper>
                 multiNetworking.SetInRoom(true);
                 UnityMultiRoomHelper placeholder = JsonConvert.DeserializeObject<UnityMultiRoomHelper>(serverMessage.Content);
                 SetSettings(placeholder.Settings);
+                multiNetworking.InvokeRoomE("joinRoom", Settings.RoomName);
                 if (Settings.SceneName != "" && Settings.SceneName != null)
                 {
                     if(SceneManager.GetActiveScene().name != Settings.SceneName)
@@ -302,22 +303,25 @@ public class UnityMultiRoom : UnityMultiSerializer<UnityMultiRoomHelper>
                         }
                         
                     } else { isSceneLoaded = true; }
-
-                    if (isSceneLoaded)
+                } else { Debug.Log("SceneName is null or equal to \"\". Auto scene load function stopped.");}
+                while (!isSceneLoaded)
+                {
+                    await Task.Yield();
+                }
+                if (isSceneLoaded)
+                {
+                    Debug.Log("boop");
+                    bool ignore;
+                    foreach (var user in placeholder.multiUserList)
                     {
-                        multiNetworking.InvokeRoomE("joinRoom", Settings.SceneName);
-                        bool ignore;
-                        foreach (var user in placeholder.multiUserList)
+                        ignore = false;
+                        foreach (var userOnList in multiUserList)
                         {
-                            ignore = false;
-                            foreach(var userOnList in multiUserList)
-                            {
-                                if (user == userOnList.GetComponent<UnityMultiUser>()) { ignore = true; break; }
-                            }
-                            if(!ignore) AddUser(user);
+                            if (user == userOnList.GetComponent<UnityMultiUser>()) { ignore = true; break; }
                         }
+                        if (!ignore) AddUser(user);
                     }
-                } else { Debug.Log("SceneName is null or equal to \"\". Auto scene load function stopped."); return; }
+                }
             }
         }
         return;

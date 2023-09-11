@@ -100,6 +100,10 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
     {
 
     }
+    public virtual void OnRoomLoad(string roomName)
+    {
+
+    }
     public virtual void OnClientJoin(UnityMultiUser user)
     {
 
