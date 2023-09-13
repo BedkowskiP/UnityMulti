@@ -33,7 +33,6 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
             multiNetworking.ConnectionStateChangeEvent += OnConnectionStateChange;
             multiNetworking.InitialConnectionEvent += OnInitialConnection;
             multiNetworking.MultiErrorEvent += OnValidationError;
-            multiNetworking.CreateRoomEvent += OnCreateRoom;
             multiNetworking.JoinRoomEvent += OnJoinRoom;
             multiNetworking.LeaveRoomEvent += OnLeaveRoom;
             multiNetworking.ClientJoinEvent += OnClientJoin;
@@ -52,7 +51,6 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
             multiNetworking.ConnectionStateChangeEvent -= OnConnectionStateChange;
             multiNetworking.InitialConnectionEvent -= OnInitialConnection;
             multiNetworking.MultiErrorEvent -= OnValidationError;
-            multiNetworking.CreateRoomEvent -= OnCreateRoom;
             multiNetworking.JoinRoomEvent -= OnJoinRoom;
             multiNetworking.LeaveRoomEvent -= OnLeaveRoom;
             multiNetworking.ClientJoinEvent -= OnClientJoin;
@@ -85,10 +83,6 @@ public class UnityMultiNetworkingCallbacks : MonoBehaviour
 
     }
     public virtual void OnValidationError(ErrorCode errorCode)
-    {
-
-    }
-    public virtual void OnCreateRoom(string roomName)
     {
 
     }

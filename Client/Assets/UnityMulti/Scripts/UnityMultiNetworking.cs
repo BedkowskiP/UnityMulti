@@ -404,7 +404,8 @@ public class UnityMultiNetworking : BaseSingleton<UnityMultiNetworking>, IDispos
         
         while (!isValidated)
         {
-            await Task.Yield();
+            Debug.Log("User not validated. Can't instantiate objects while not in room.");
+            return;
         }
 
         if (!isInRoom)
