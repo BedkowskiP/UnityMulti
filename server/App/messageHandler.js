@@ -223,7 +223,7 @@ const HandleRPCMethod = async (socket,MsgRecvived) =>
     const RoomName = await usersMan.Users[MsgRecvived.UserID].inRoom;
 
     let msg = MSG.CreateMsg(messageTypes.RPCMETHODRES,contentMsgRecvived,isErrorCode,DEBUGMODE,1)
-    roomsMan.BroadcastMsgToUsersInRoom(RoomName,    msg,    null);//changed except from jsonmsg.UserID-> null
+    roomsMan.BroadcastMsgToUsersInRoom(RoomName,    msg,null);//changed except from jsonmsg.UserID-> null
 }
 module.exports = {
     HandleValidation,
