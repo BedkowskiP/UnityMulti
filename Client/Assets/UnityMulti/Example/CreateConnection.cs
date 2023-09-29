@@ -63,7 +63,7 @@ public class CreateConnection : UnityMultiNetworkingCallbacks
             Debug.Log("RoomName can't be empty");
             return;
         }
-        multiNetworking.JoinRoom(new UnityMultiRoomSettings(RoomName: "RoomTestA", Password: ""));
+        multiNetworking.JoinRoom(new UnityMultiRoomSettings(RoomName: s_roomName, Password: ""));
     }
 
     public void CreateRoom()
@@ -75,7 +75,7 @@ public class CreateConnection : UnityMultiNetworkingCallbacks
             Debug.Log("RoomName can't be empty");
             return;
         }
-        multiNetworking.CreateRoom(new UnityMultiRoomSettings(RoomName: "RoomTestA", Password: ""));
+        multiNetworking.CreateRoom(new UnityMultiRoomSettings(RoomName: s_roomName, Password: ""));
     }
 
     public void Connect()

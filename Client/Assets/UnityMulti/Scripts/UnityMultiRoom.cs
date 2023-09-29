@@ -310,7 +310,7 @@ public class UnityMultiRoom : UnityMultiSerializer<UnityMultiRoomHelper>
                 }
                 if (isSceneLoaded)
                 {
-                    Debug.Log("boop");
+                    Debug.Log("Adding players...");
                     bool ignore;
                     foreach (var user in placeholder.multiUserList)
                     {
